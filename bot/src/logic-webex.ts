@@ -123,6 +123,8 @@ export const fillCaptchaAndJoin = async (page: Page, captcha: string, sessionId:
             await unlink(VIDEO_PATH)
             await unlink(AUDIO_PATH)
         })
+
+        page.once('dialog', e => e.dismiss())
         await page.goto('https://example.com', { waitUntil: 'networkidle2' })
     }
 
