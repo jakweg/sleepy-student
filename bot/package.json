@@ -1,0 +1,12 @@
+{
+    "scripts": {
+        "build": "esbuild --bundle --outdir=dist src/main.ts --format=esm",
+        "start": "node dist/main.js",
+        "dev": "concurrently 'esbuild --bundle --outdir=dist src/main.ts --format=esm --watch' 'nodemon --watch dist dist/main.js'"
+    },
+    "dependencies": {
+        "esbuild": "0.15.10",
+        "concurrently": "7.4.0",
+        "nodemon": "2.0.20"
+    }
+}
