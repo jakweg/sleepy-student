@@ -4,5 +4,6 @@ RUN apt update && apt install libgbm1 gconf-service libasound2 libatk1.0-0 libc6
 COPY package*.json ./
 RUN npm install
 COPY . .
+COPY .env .env
 RUN npm run build
 CMD ["npm", "run", "start"]
