@@ -27,7 +27,7 @@ const browser = await puppeteer.launch({
 });
 const page = (await browser.pages())[0] ?? await browser.newPage()
 
-const recordPage = async (url: string) => {
+const joinWebexMeeting = async (url: string) => {
     await page.goto(url, { waitUntil: 'domcontentloaded' })
     const recorder = new PuppeteerScreenRecorder(page, {
         followNewTab: false,
@@ -43,21 +43,29 @@ const recordPage = async (url: string) => {
         aspectRatio: '16:9',
     })
 
-    // await recorder.start(RECORDINGS_PATH + 'hello.mp4')
+    // await recorder.start(RECORDINGS_PATH + 'hello.mp4')  
     // const audioRecording = spawn('ffmpeg', ['-f', 'pulse', '-i', 'auto_null.monitor', '-y', RECORDINGS_PATH + '/current-audio.m4a'])
 
     try {
         await new Promise(resolve => setTimeout(resolve, 1_000))
         await page.evaluate(async () => {
             for (let i = 0; i < 10; ++i) {
-                const btn = [...document.querySelectorAll('a')].filter(e => (e as HTMLAnchorElement)?.textContent?.includes('Reject all'))[0] as HTMLAnchorElement
+                const btn = document.getElementById('push_download_join_by_browser') as HTMLAnchorElement
                 if (btn) {
                     btn.click()
-                    break
+                    return
                 }
                 await new Promise(resolve => setTimeout(resolve, 1_000))
             }
+            throw new Error('Timeout!')
         })
+
+        await page.waitForNetworkIdle();
+        await new Promise(resolve => setTimeout(resolve, 5_000));
+        const img = await (await Promise.all((await page.frames()).map(e => e.$('#verificationImage')))).find(e => e)
+        if (!img) throw new Error('Failed to get verification image')
+        const buffer = await img.screenshot({ captureBeyondViewport: true, type: 'png' })
+        console.log(buffer);
 
         await new Promise(resolve => setTimeout(resolve, 5000))
 
@@ -70,6 +78,6 @@ const recordPage = async (url: string) => {
     await new Promise(resolve => setTimeout(resolve, 500000))
 
 }
-await recordPage('https://meet231.webex.com/meet/pr27415595744')
+await joinWebexMeeting('https://meet231.webex.com/meet/pr27415595744')
 
 await browser.close()
