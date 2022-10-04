@@ -1,12 +1,17 @@
 {
     "scripts": {
-        "build": "esbuild --bundle --outdir=dist src/main.ts --format=esm",
+        "build": "esbuild --bundle --outdir=dist --external:puppeteer --external:puppeteer-screen-recorder --format=esm --platform=node src/main.ts",
         "start": "node dist/main.js",
-        "dev": "concurrently 'esbuild --bundle --outdir=dist src/main.ts --format=esm --watch' 'nodemon --watch dist dist/main.js'"
+        "dev": "concurrently 'esbuild --bundle --outdir=dist --external:puppeteer --external:puppeteer-screen-recorder --format=esm --platform=node src/main.ts --watch' 'nodemon --watch dist dist/main.js'"
     },
+    "type": "module",
     "dependencies": {
+        "fluent-ffmpeg": "2.1.2",
+        "puppeteer": "18.0.5",
+        "puppeteer-screen-recorder": "2.1.1",
         "esbuild": "0.15.10",
         "concurrently": "7.4.0",
-        "nodemon": "2.0.20"
+        "nodemon": "2.0.20",
+        "@types/puppeteer": "5.4.6"
     }
 }
