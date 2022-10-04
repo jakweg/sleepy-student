@@ -128,8 +128,8 @@ export const fillCaptchaAndJoin = async (page: Page, captcha: string, sessionId:
             notifyWhenRecordingReact(name)
         })
 
-        page.once('dialog', e => e.dismiss())
-        await page.goto('https://example.com', { waitUntil: 'networkidle2' })
+        page.once('dialog', e => e.accept())
+        await page.goto('about:blank', { waitUntil: 'networkidle2' })
     }
 
     return {
