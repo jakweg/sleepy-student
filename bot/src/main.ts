@@ -38,6 +38,8 @@ const HEIGHT = 720
 
 const browser = await puppeteer.launch({
     headless: true,
+    executablePath: '/usr/bin/google-chrome-stable',
+    product: 'chrome',
     defaultViewport: {
         width: WIDTH,
         height: HEIGHT,
@@ -57,8 +59,6 @@ const joinWebexMeetingAndGetCaptcha = async (url: string) => {
     await page.browserContext().overridePermissions(url, ['microphone', 'camera'])
     await page.goto(url, { waitUntil: 'domcontentloaded' })
 
-    await sleep(10000)
-    await page.screenshot({ path: '/recordings/debug.png' })
     try {
         await page.waitForSelector('#push_download_join_by_browser')
         await page.click('#push_download_join_by_browser')
