@@ -141,7 +141,13 @@ const handleStopRecordingClicked = async (interaction: ButtonInteraction<CacheTy
         content: `Stopped recording`,
         ephemeral: true,
     })
-    stopCallback()
+
+    stopCallback(name => {
+        interaction.followUp({
+            content: `Recording is ready ${name}`,
+            ephemeral: true,
+        })
+    })
 }
 
 const handleInteraction = async (interaction: Interaction<CacheType>) => {
@@ -189,7 +195,13 @@ export const launch = async () => {
 
     await client.login(process.env.DISCORD_TOKEN)
 
-    client.on('interactionCreate', handleInteraction);
+    client.on('interactionCreate', interaction => {
+        try {
+            handleInteraction(interaction)
+        } catch (e) {
+            console.error('Failed to response to interaction', e);
+        }
+    });
 
     return client
 }

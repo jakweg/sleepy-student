@@ -20,5 +20,5 @@ export type State = { type: 'none' }
         type: 'recording-webex'
         sessionId: string
         page: puppeteer.Page
-        stopCallback: () => void
+        stopCallback: (callback: (name: string) => void) => void
     }

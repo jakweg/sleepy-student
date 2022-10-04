@@ -106,14 +106,17 @@ export const fillCaptchaAndJoin = async (page: Page, captcha: string, sessionId:
     await recorder.start(VIDEO_PATH)
     const audioRecording = spawn('ffmpeg', ['-f', 'pulse', '-i', 'auto_null.monitor', '-y', AUDIO_PATH])
 
-    const recordingStopper = async () => {
+    const recordingStopper = async (notifyWhenRecordingReact: (name: string) => void) => {
         audioRecording.kill(15)
         await recorder.stop()
 
-        const FINAL_PATH = `${RECORDINGS_PATH}/combined-${new Date().toJSON().replace(':', '-')}.mp4`
+        const name = `combined-${new Date().toJSON().replace(':', '-')}.mp4`
+        const FINAL_PATH = `${RECORDINGS_PATH}/${name}`
 
-        const merger = spawn('ffmpeg', ['-i',
-            VIDEO_PATH, '-i', AUDIO_PATH,
+        const merger = spawn('ffmpeg', [
+            '-r', '5',
+            '-i', VIDEO_PATH,
+            '-i', AUDIO_PATH,
             '-c:v', 'copy',
             '-c:a', 'aac',
             FINAL_PATH, '-y',])
@@ -122,6 +125,7 @@ export const fillCaptchaAndJoin = async (page: Page, captcha: string, sessionId:
             console.log('recording merged!', FINAL_PATH);
             await unlink(VIDEO_PATH)
             await unlink(AUDIO_PATH)
+            notifyWhenRecordingReact(name)
         })
 
         page.once('dialog', e => e.dismiss())
