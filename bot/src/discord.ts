@@ -1,7 +1,39 @@
-import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, CacheType, ChatInputCommandInteraction, Client, Interaction, ModalBuilder, REST, Routes, SlashCommandBuilder, SlashCommandStringOption, TextInputBuilder, TextInputStyle } from "discord.js";
+import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, CacheType, ChatInputCommandInteraction, Client, Interaction, ModalBuilder, REST, Routes, SlashCommandBooleanOption, SlashCommandBuilder, SlashCommandStringOption, TextInputBuilder, TextInputStyle } from "discord.js";
 import { ALLOWED_CHANNELS } from "./config";
 import { currentState, setCurrentState } from "./current-state";
 import { createWebexSession, fillCaptchaAndJoin } from "./logic-webex";
+
+const startWebex = async (sessionId: string, interaction: ChatInputCommandInteraction<CacheType>) => {
+
+    if (currentState.type !== 'preparing-for-webex-captcha' || currentState.options.sessionId !== sessionId)
+        return
+
+    const webex = await createWebexSession(currentState.page, currentState.options.url)
+
+    if (currentState.type !== 'preparing-for-webex-captcha' || currentState.options.sessionId !== sessionId)
+        return
+
+    setCurrentState({
+        type: "waiting-for-solution-for-webex-captcha",
+        options: currentState.options,
+        page: currentState.page,
+    })
+
+    const attachment = new AttachmentBuilder(webex.captchaImage);
+
+    await interaction.followUp({
+        content: 'Please solve this captcha',
+        files: [attachment],
+        components: [new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId(`solve-captcha-button#${sessionId}`)
+                    .setLabel(`I'm ready`)
+                    .setStyle(ButtonStyle.Primary),
+            ) as any],
+        ephemeral: true
+    });
+}
 
 const handleRequestStart = async (interaction: ChatInputCommandInteraction<CacheType>) => {
     if (currentState.type !== 'idle') {
@@ -13,13 +45,15 @@ const handleRequestStart = async (interaction: ChatInputCommandInteraction<Cache
     }
 
     const session = `${Date.now()}`
+    const url = interaction.options.getString('url')!
+    const showChat = !!interaction.options.getBoolean('show-chat')
+
     setCurrentState({
         type: "preparing-for-webex-captcha",
-        sessionId: session,
+        options: { sessionId: session, showChat, url },
         page: currentState.page,
     })
 
-    const url = interaction.options.getString('url')!
 
     await interaction.reply({
         content: `I'm joining...`,
@@ -27,28 +61,7 @@ const handleRequestStart = async (interaction: ChatInputCommandInteraction<Cache
     })
 
     try {
-        const webex = await createWebexSession(currentState.page, url)
-
-        setCurrentState({
-            type: "waiting-for-solution-for-webex-captcha",
-            sessionId: session,
-            page: currentState.page,
-        })
-
-        const attachment = new AttachmentBuilder(webex.captchaImage);
-
-        await interaction.followUp({
-            content: 'Please solve this captcha',
-            files: [attachment],
-            components: [new ActionRowBuilder()
-                .addComponents(
-                    new ButtonBuilder()
-                        .setCustomId(`solve-captcha-button#${session}`)
-                        .setLabel(`I'm ready`)
-                        .setStyle(ButtonStyle.Primary),
-                ) as any],
-            ephemeral: true
-        });
+        startWebex(session, interaction)
     } catch (e) {
         console.error(e)
         interaction.followUp({
@@ -72,7 +85,7 @@ const handleSolveButtonClicked = async (interaction: ButtonInteraction<CacheType
     }
 
     const modal = new ModalBuilder()
-        .setCustomId(`captcha-modal#${currentState.sessionId}`)
+        .setCustomId(`captcha-modal#${currentState.options.sessionId}`)
         .setTitle('Solve the captcha');
 
     const resultInput = new TextInputBuilder()
@@ -105,14 +118,14 @@ const handleSolveButtonClicked = async (interaction: ButtonInteraction<CacheType
 
     setCurrentState({
         type: "joining-webex",
-        sessionId: currentState.sessionId,
+        options: currentState.options,
         page: currentState.page,
     })
-    const runningWebex = await fillCaptchaAndJoin(currentState.page, captcha, currentState.sessionId)
+    const runningWebex = await fillCaptchaAndJoin(currentState.page, captcha, currentState.options.sessionId)
 
     setCurrentState({
         type: "recording-webex",
-        sessionId: currentState.sessionId,
+        options: currentState.options,
         page: currentState.page,
         stopCallback: runningWebex.recordingStopper
     })
@@ -137,7 +150,7 @@ const handleStopRecordingClicked = async (interaction: ButtonInteraction<CacheTy
         })
         return
     }
-    if (session !== null && currentState.sessionId !== session) {
+    if (session !== null && currentState.options.sessionId !== session) {
         await interaction.reply({
             content: `Outdated button`,
             ephemeral: true,
@@ -209,6 +222,28 @@ const handleInteraction = async (interaction: Interaction<CacheType>) => {
     }
 }
 
+const createCommands = () => {
+    return [
+        new SlashCommandBuilder()
+            .setName('record')
+            .setDescription('Requests the bot to record a session')
+            .addStringOption(new SlashCommandStringOption()
+                .setName('url')
+                .setDescription('Link to meeting')
+                .setRequired(true))
+            .addBooleanOption(new SlashCommandBooleanOption()
+                .setName('show-chat')
+                .setDescription('Show chat in the recording')
+                .setRequired(false)),
+        new SlashCommandBuilder()
+            .setName('stop')
+            .setDescription('Requests the bot to stop the recording'),
+        new SlashCommandBuilder()
+            .setName('ss')
+            .setDescription('Takes screenshot of current page')
+    ]
+}
+
 export const launch = async () => {
     const client = new Client({
         intents: [
@@ -219,21 +254,7 @@ export const launch = async () => {
 
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN!);
     rest.put(Routes.applicationCommands(process.env.APPLICATION_ID!), {
-        body: [
-            new SlashCommandBuilder()
-                .setName('record')
-                .setDescription('Requests the bot to record a session')
-                .addStringOption(new SlashCommandStringOption()
-                    .setName('url')
-                    .setDescription('Link to meeting')
-                    .setRequired(true)),
-            new SlashCommandBuilder()
-                .setName('stop')
-                .setDescription('Requests the bot to stop the recording'),
-            new SlashCommandBuilder()
-                .setName('ss')
-                .setDescription('Takes screenshot of current page')
-        ].map(e => e.toJSON())
+        body: createCommands().map(e => e.toJSON())
     })
 
     await client.login(process.env.DISCORD_TOKEN)
@@ -248,3 +269,4 @@ export const launch = async () => {
 
     return client
 }
+

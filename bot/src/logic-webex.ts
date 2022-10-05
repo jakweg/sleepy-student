@@ -3,6 +3,7 @@ import { unlink } from 'fs/promises'
 import { Page } from "puppeteer"
 import { PuppeteerScreenRecorder } from "puppeteer-screen-recorder"
 import { HEIGHT, RECORDINGS_PATH, WIDTH } from "./config"
+import { currentState } from './current-state'
 import { sleep } from "./utils"
 
 export const createWebexSession = async (page: Page, url: string) => {
@@ -57,10 +58,12 @@ export const fillCaptchaAndJoin = async (page: Page, captcha: string, sessionId:
     await sleep(500)
     await frame.click('#guest_next-btn')
 
-    await sleep(5000)
-
-    frameIndex = (await Promise.all(page.frames().map(e => e.$('[data-doi="MEETING:JOIN_MEETING:MEETSIMPLE_INTERSTITIAL"]')))).findIndex(e => e)
-    frame = page.frames()[frameIndex]
+    for (let i = 0; i < 20; ++i) {
+        frameIndex = (await Promise.all(page.frames().map(e => e.$('[data-doi="MEETING:JOIN_MEETING:MEETSIMPLE_INTERSTITIAL"]')))).findIndex(e => e)
+        frame = page.frames()[frameIndex]
+        if (frame) break
+        await sleep(1000)
+    }
     if (!frame) throw new Error('missing join button')
     await sleep(1000)
     try { await frame.click('[data-doi="AUDIO:MUTE_SELF:MEETSIMPLE_INTERSTITIAL"]'); await sleep(500) } catch (e) { }
@@ -80,15 +83,15 @@ export const fillCaptchaAndJoin = async (page: Page, captcha: string, sessionId:
 
     await waitToBeJoined()
 
-    frame.waitForSelector('[title="Got it"]', { timeout: 0 })
+    frame.waitForSelector('[title="Got it"]', { timeout: 5000 })
         .then(() => frame.click('[title="Got it"]'))
         .catch(e => void (e))
 
-    try {
-        await frame.click('[data-doi="CHAT:OPEN_CHAT_PANEL:MENU_CONTROL_BAR"]');
-        await sleep(400);
-        await frame.click('[data-doi="CHAT:OPEN_CHAT_PANEL:MENU_CONTROL_BAR"]');
-    } catch (e) { }
+    if (currentState.type === 'joining-webex' && currentState.options.showChat)
+        frame.waitForSelector('[data-doi="CHAT:OPEN_CHAT_PANEL:MENU_CONTROL_BAR"]', { timeout: 5000 })
+            .then(() => sleep(1000))
+            .then(() => frame.click('[data-doi="CHAT:OPEN_CHAT_PANEL:MENU_CONTROL_BAR"]'))
+            .catch(e => void (e))
 
     const recorder = new PuppeteerScreenRecorder(page, {
         followNewTab: false,
