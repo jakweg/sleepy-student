@@ -1,5 +1,5 @@
 import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, CacheType, ChatInputCommandInteraction, Client, Interaction, ModalBuilder, REST, Routes, SlashCommandBooleanOption, SlashCommandBuilder, SlashCommandStringOption, TextInputBuilder, TextInputStyle } from "discord.js";
-import { ALLOWED_CHANNELS } from "./config";
+import { ALLOWED_CHANNELS, RECORDING_READY_MESSAGE_FORMAT } from "./config";
 import { currentState, setCurrentState } from "./current-state";
 import { createWebexSession, fillCaptchaAndJoin } from "./logic-webex";
 
@@ -170,7 +170,7 @@ const handleStopRecordingClicked = async (interaction: ButtonInteraction<CacheTy
 
     stopCallback(name => {
         interaction.followUp({
-            content: `Recording is ready ${name}`,
+            content: RECORDING_READY_MESSAGE_FORMAT.replace('%name%', name),
             ephemeral: true,
         })
     })
