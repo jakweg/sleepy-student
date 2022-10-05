@@ -163,6 +163,23 @@ const handleStopRecordingClicked = async (interaction: ButtonInteraction<CacheTy
     })
 }
 
+const handleScreenshotRequest = async (interaction: ChatInputCommandInteraction<CacheType>) => {
+    await interaction.deferReply({ ephemeral: true })
+    if (currentState.type === 'none')
+        return
+
+    const screenshotData = await currentState.page.screenshot({ captureBeyondViewport: true, fullPage: true, type: 'jpeg' })
+
+    const attachment = new AttachmentBuilder(screenshotData);
+
+
+    await interaction.followUp({
+        content: 'Here you are',
+        files: [attachment],
+        ephemeral: true
+    });
+}
+
 const handleInteraction = async (interaction: Interaction<CacheType>) => {
     if (!ALLOWED_CHANNELS.includes(interaction.channelId!)) {
         console.warn('Not permitted invocation in channel', interaction.channelId);
@@ -179,6 +196,8 @@ const handleInteraction = async (interaction: Interaction<CacheType>) => {
             handleStopRecordingClicked(interaction, null)
         } else if (commandName === 'record') {
             await handleRequestStart(interaction)
+        } else if (commandName === 'ss') {
+            await handleScreenshotRequest(interaction)
         }
     } else if (interaction.isButton()) {
         const [customId, session] = interaction.customId.split('#')
@@ -210,7 +229,10 @@ export const launch = async () => {
                     .setRequired(true)),
             new SlashCommandBuilder()
                 .setName('stop')
-                .setDescription('Requests the bot to stop the recording')
+                .setDescription('Requests the bot to stop the recording'),
+            new SlashCommandBuilder()
+                .setName('ss')
+                .setDescription('Takes screenshot of current page')
         ].map(e => e.toJSON())
     })
 
