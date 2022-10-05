@@ -27,4 +27,13 @@ export type State = { type: 'none' }
         options: RecordingStartOptions
         page: puppeteer.Page
         stopCallback: (callback: (name: string) => void) => void
+    } | {
+        type: 'joining-teams'
+        options: RecordingStartOptions
+        page: puppeteer.Page
+    } | {
+        type: 'recording-teams'
+        options: RecordingStartOptions
+        page: puppeteer.Page
+        stopCallback: (callback: (name: string) => void) => void
     }

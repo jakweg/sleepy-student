@@ -1,6 +1,7 @@
 import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, CacheType, ChatInputCommandInteraction, Client, Interaction, ModalBuilder, REST, Routes, SlashCommandBooleanOption, SlashCommandBuilder, SlashCommandStringOption, TextInputBuilder, TextInputStyle } from "discord.js";
-import { ALLOWED_CHANNELS, RECORDING_READY_MESSAGE_FORMAT } from "./config";
+import { ALLOWED_CHANNELS, MS_TEAMS_CREDENTIALS_LOGIN, MS_TEAMS_CREDENTIALS_PASSWORD, RECORDING_READY_MESSAGE_FORMAT } from "./config";
 import { currentState, setCurrentState } from "./current-state";
+import { startTeamsSession } from "./logic-teams";
 import { createWebexSession, fillCaptchaAndJoin } from "./logic-webex";
 
 const startWebex = async (sessionId: string, interaction: ChatInputCommandInteraction<CacheType>) => {
@@ -35,7 +36,7 @@ const startWebex = async (sessionId: string, interaction: ChatInputCommandIntera
     });
 }
 
-const handleRequestStart = async (interaction: ChatInputCommandInteraction<CacheType>) => {
+const handleRequestWebexStart = async (interaction: ChatInputCommandInteraction<CacheType>) => {
     if (currentState.type !== 'idle') {
         await interaction.reply({
             content: `Sorry, but I'm busy now`,
@@ -143,7 +144,7 @@ const handleSolveButtonClicked = async (interaction: ButtonInteraction<CacheType
 }
 
 const handleStopRecordingClicked = async (interaction: ButtonInteraction<CacheType> | ChatInputCommandInteraction<CacheType>, session: string | null) => {
-    if (currentState.type !== 'recording-webex') {
+    if (currentState.type !== 'recording-webex' && currentState.type !== 'recording-teams') {
         await interaction.reply({
             content: `Wasn't even recording`,
             ephemeral: true,
@@ -185,12 +186,54 @@ const handleScreenshotRequest = async (interaction: ChatInputCommandInteraction<
 
     const attachment = new AttachmentBuilder(screenshotData);
 
-
     await interaction.followUp({
         content: 'Here you are',
         files: [attachment],
         ephemeral: true
     });
+}
+
+const handleRequestTeamsStart = async (interaction: ChatInputCommandInteraction<CacheType>) => {
+    if (currentState.type !== 'idle') {
+        await interaction.reply({
+            content: `I'm busy`,
+            ephemeral: true,
+        })
+        return
+    }
+    if (!MS_TEAMS_CREDENTIALS_LOGIN || !MS_TEAMS_CREDENTIALS_PASSWORD) {
+        await interaction.reply({
+            content: `teams are disabled`,
+            ephemeral: true,
+        })
+        return
+    }
+
+    const page = currentState.page
+    const url = interaction.options.getString('url')!
+
+    setCurrentState({
+        type: 'joining-teams',
+        options: {
+            sessionId: `${Date.now()}`,
+            showChat: false, url
+        },
+        page,
+    })
+
+    await interaction.reply({
+        content: 'Working',
+        ephemeral: true,
+    })
+
+    await startTeamsSession(url, page)
+
+    setCurrentState({
+        type: 'recording-teams',
+        options: (currentState as any).options,
+        page,
+        stopCallback: () => console.log('chuj')
+    })
 }
 
 const handleInteraction = async (interaction: Interaction<CacheType>) => {
@@ -207,8 +250,10 @@ const handleInteraction = async (interaction: Interaction<CacheType>) => {
 
         if (commandName === 'stop') {
             handleStopRecordingClicked(interaction, null)
-        } else if (commandName === 'record') {
-            await handleRequestStart(interaction)
+        } else if (commandName === 'webex') {
+            await handleRequestWebexStart(interaction)
+        } else if (commandName === 'teams') {
+            await handleRequestTeamsStart(interaction)
         } else if (commandName === 'ss') {
             await handleScreenshotRequest(interaction)
         }
@@ -225,8 +270,8 @@ const handleInteraction = async (interaction: Interaction<CacheType>) => {
 const createCommands = () => {
     return [
         new SlashCommandBuilder()
-            .setName('record')
-            .setDescription('Requests the bot to record a session')
+            .setName('webex')
+            .setDescription('Requests the bot to record a webex session')
             .addStringOption(new SlashCommandStringOption()
                 .setName('url')
                 .setDescription('Link to meeting')
@@ -235,6 +280,13 @@ const createCommands = () => {
                 .setName('show-chat')
                 .setDescription('Show chat in the recording')
                 .setRequired(false)),
+        new SlashCommandBuilder()
+            .setName('teams')
+            .setDescription('Requests the bot to record a ms teams session')
+            .addStringOption(new SlashCommandStringOption()
+                .setName('url')
+                .setDescription('Link to meeting')
+                .setRequired(true)),
         new SlashCommandBuilder()
             .setName('stop')
             .setDescription('Requests the bot to stop the recording'),
