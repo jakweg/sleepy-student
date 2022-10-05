@@ -21,7 +21,9 @@ export const createWebexSession = async (page: Page, url: string) => {
             const img = (await Promise.all((page.frames()).map(e => e.$('#verificationImage')))).find(e => e)
             if (img) return await img.screenshot({ captureBeyondViewport: true, type: 'png' })
             await sleep(1000)
-        } throw new Error('Failed to get verification image')
+        }
+        await page.screenshot({ captureBeyondViewport: true, path: `${RECORDINGS_PATH}/debug.png` })
+        throw new Error('Failed to get verification image')
     }
 
     await sleep(1000)

@@ -1,10 +1,8 @@
 import { spawnSync } from 'child_process';
 import { ActivityType } from 'discord.js';
-import * as dotenv from 'dotenv';
 import { launch as launchBrowser } from './browser';
 import { addStateListener, setCurrentState } from './current-state';
 import { launch as launchDiscord } from './discord';
-dotenv.config()
 
 try { spawnSync('pulseaudio', ['-D']) } catch (e) { void e }
 

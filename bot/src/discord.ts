@@ -1,4 +1,5 @@
 import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, CacheType, ChatInputCommandInteraction, Client, Interaction, ModalBuilder, REST, Routes, SlashCommandBuilder, SlashCommandStringOption, TextInputBuilder, TextInputStyle } from "discord.js";
+import { ALLOWED_CHANNELS } from "./config";
 import { currentState, setCurrentState } from "./current-state";
 import { createWebexSession, fillCaptchaAndJoin } from "./logic-webex";
 
@@ -25,28 +26,40 @@ const handleRequestStart = async (interaction: ChatInputCommandInteraction<Cache
         ephemeral: true,
     })
 
-    const webex = await createWebexSession(currentState.page, url)
+    try {
+        const webex = await createWebexSession(currentState.page, url)
 
-    setCurrentState({
-        type: "waiting-for-solution-for-webex-captcha",
-        sessionId: session,
-        page: currentState.page,
-    })
+        setCurrentState({
+            type: "waiting-for-solution-for-webex-captcha",
+            sessionId: session,
+            page: currentState.page,
+        })
 
-    const attachment = new AttachmentBuilder(webex.captchaImage);
+        const attachment = new AttachmentBuilder(webex.captchaImage);
 
-    await interaction.followUp({
-        content: 'Please solve this captcha',
-        files: [attachment],
-        components: [new ActionRowBuilder()
-            .addComponents(
-                new ButtonBuilder()
-                    .setCustomId(`solve-captcha-button#${session}`)
-                    .setLabel(`I'm ready`)
-                    .setStyle(ButtonStyle.Primary),
-            ) as any],
-        ephemeral: true
-    });
+        await interaction.followUp({
+            content: 'Please solve this captcha',
+            files: [attachment],
+            components: [new ActionRowBuilder()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId(`solve-captcha-button#${session}`)
+                        .setLabel(`I'm ready`)
+                        .setStyle(ButtonStyle.Primary),
+                ) as any],
+            ephemeral: true
+        });
+    } catch (e) {
+        console.error(e)
+        interaction.followUp({
+            content: 'Something went wrong',
+            ephemeral: true
+        });
+        setCurrentState({
+            type: "idle",
+            page: currentState.page,
+        })
+    }
 }
 
 const handleSolveButtonClicked = async (interaction: ButtonInteraction<CacheType>, session: string) => {
@@ -151,6 +164,14 @@ const handleStopRecordingClicked = async (interaction: ButtonInteraction<CacheTy
 }
 
 const handleInteraction = async (interaction: Interaction<CacheType>) => {
+    if (!ALLOWED_CHANNELS.includes(interaction.channelId!)) {
+        console.warn('Not permitted invocation in channel', interaction.channelId);
+        if (interaction.isRepliable())
+            interaction.reply({ content: `This channel (${interaction.channelId}) is not allowed to use this bot`, ephemeral: true })
+        return
+    }
+
+
     if (interaction.isChatInputCommand()) {
         const { commandName } = interaction;
 
