@@ -1,10 +1,10 @@
 import * as puppeteer from 'puppeteer';
-import { HEIGHT, WIDTH } from './config';
+import { DEBUG, HEIGHT, WIDTH } from './config';
 
 export const launch = async () => {
     return await puppeteer.launch({
-        headless: true,
-        executablePath: '/usr/bin/google-chrome-stable',
+        headless: !DEBUG,
+        executablePath: DEBUG ? undefined : '/usr/bin/google-chrome-stable',
         product: 'chrome',
         defaultViewport: {
             width: WIDTH,
