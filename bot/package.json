@@ -1,6 +1,6 @@
 {
     "scripts": {
-        "build": "esbuild --bundle --outdir=dist --external:puppeteer --external:puppeteer-screen-recorder --external:discord.js --external:dotenv --format=esm --platform=node src/main.ts",
+        "build": "esbuild --bundle --outdir=dist --external:puppeteer --external:discord.js --external:dotenv --format=esm --platform=node src/main.ts",
         "start": "node dist/main.js",
         "dev": "DOCKER_BUILDKIT=0 docker build -t jakweg/sleepy-student . && docker container rm bot --force && docker container create -it  --volume recordings:/recordings --name bot jakweg/sleepy-student && docker container start bot"
     },
@@ -10,7 +10,6 @@
         "discord.js":"14.5.0",
         "fluent-ffmpeg": "2.1.2",
         "puppeteer": "18.0.5",
-        "puppeteer-screen-recorder": "2.1.1",
         "esbuild": "0.15.10",
         "concurrently": "7.4.0",
         "nodemon": "2.0.20",

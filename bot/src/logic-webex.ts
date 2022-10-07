@@ -1,9 +1,7 @@
-import { spawn } from 'child_process'
-import { unlink } from 'fs/promises'
 import { Page } from "puppeteer"
-import { PuppeteerScreenRecorder } from "puppeteer-screen-recorder"
-import { HEIGHT, RECORDINGS_PATH, WIDTH } from "./config"
+import { RECORDINGS_PATH } from "./config"
 import { currentState } from './current-state'
+import { startRecording } from './recorder'
 import { sleep } from "./utils"
 
 export const createWebexSession = async (page: Page, url: string) => {
@@ -93,55 +91,5 @@ export const fillCaptchaAndJoin = async (page: Page, captcha: string, sessionId:
             .then(() => frame.click('[data-doi="CHAT:OPEN_CHAT_PANEL:MENU_CONTROL_BAR"]'))
             .catch(e => void (e))
 
-    const recorder = new PuppeteerScreenRecorder(page, {
-        followNewTab: false,
-        fps: 30,
-        ffmpeg_Path: null,
-        videoFrame: {
-            width: WIDTH,
-            height: HEIGHT,
-        },
-        autopad: {
-            color: 'black',
-        },
-        aspectRatio: '16:9',
-    })
-
-    console.log('starting recording');
-
-    const VIDEO_PATH = `${RECORDINGS_PATH}/current-video-${sessionId}.mp4`;
-    const AUDIO_PATH = `${RECORDINGS_PATH}/current-audio-${sessionId}.m4a`;
-
-    await recorder.start(VIDEO_PATH)
-    const audioRecording = spawn('ffmpeg', ['-f', 'pulse', '-i', 'auto_null.monitor', '-y', AUDIO_PATH])
-
-    const recordingStopper = async (notifyWhenRecordingReact: (name: string) => void) => {
-        page.once('dialog', e => e.accept())
-        await page.goto('about:blank', { waitUntil: 'networkidle2' })
-
-        audioRecording.kill(15)
-        await recorder.stop()
-
-        const name = `combined-${new Date().toJSON().replace(':', '-')}.mp4`
-        const FINAL_PATH = `${RECORDINGS_PATH}/${name}`
-
-        const merger = spawn('ffmpeg', [
-            '-r', '5',
-            '-i', VIDEO_PATH,
-            '-i', AUDIO_PATH,
-            '-c:v', 'copy',
-            '-c:a', 'aac',
-            FINAL_PATH, '-y',])
-
-        merger.once('close', async () => {
-            console.log('recording merged!', FINAL_PATH);
-            await unlink(VIDEO_PATH)
-            await unlink(AUDIO_PATH)
-            notifyWhenRecordingReact(name)
-        })
-    }
-
-    return {
-        recordingStopper,
-    }
+    return { recordingStopper: (await startRecording(page, sessionId)).stop }
 }

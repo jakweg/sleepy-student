@@ -1,8 +1,9 @@
 import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, CacheType, ChatInputCommandInteraction, Client, Interaction, ModalBuilder, REST, Routes, SlashCommandBooleanOption, SlashCommandBuilder, SlashCommandStringOption, TextInputBuilder, TextInputStyle } from "discord.js";
-import { ALLOWED_CHANNELS, MS_TEAMS_CREDENTIALS_LOGIN, MS_TEAMS_CREDENTIALS_PASSWORD, RECORDING_READY_MESSAGE_FORMAT } from "./config";
+import { ALLOWED_CHANNELS, MS_TEAMS_CREDENTIALS_LOGIN, MS_TEAMS_CREDENTIALS_PASSWORD, RECORDINGS_PATH, RECORDING_READY_MESSAGE_FORMAT } from "./config";
 import { currentState, setCurrentState } from "./current-state";
 import { startTeamsSession } from "./logic-teams";
 import { createWebexSession, fillCaptchaAndJoin } from "./logic-webex";
+import { startRecording } from "./recorder";
 
 const startWebex = async (sessionId: string, interaction: ChatInputCommandInteraction<CacheType>) => {
 
@@ -222,17 +223,36 @@ const handleRequestTeamsStart = async (interaction: ChatInputCommandInteraction<
     })
 
     await interaction.reply({
-        content: 'Working',
+        content: 'Joining teams!',
         ephemeral: true,
     })
 
-    await startTeamsSession(url, page)
+    try {
+        await startTeamsSession(url, page)
+    } catch (e) {
+        console.error('Failed to join teams', e)
+
+        await page.screenshot({ captureBeyondViewport: true, fullPage: true, path: `${RECORDINGS_PATH}/debug-failed-teams.png` })
+        await page.goto('about:blank', { waitUntil: 'networkidle2' })
+        setCurrentState({
+            type: 'idle',
+            page,
+        })
+
+        await interaction.followUp({
+            content: 'Failed to join teams',
+            ephemeral: true,
+        })
+        return
+    }
+
+    const recording = await startRecording(page, (currentState as any).options.sessionId)
 
     setCurrentState({
         type: 'recording-teams',
         options: (currentState as any).options,
         page,
-        stopCallback: () => console.log('chuj')
+        stopCallback: recording.stop
     })
 }
 

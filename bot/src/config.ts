@@ -1,4 +1,5 @@
 import * as dotenv from 'dotenv';
+import * as fs from 'fs/promises';
 dotenv.config()
 
 export const ENVIRONMENT = (process.env.ENVIRONMENT?.toLowerCase()) || 'unset'
@@ -25,3 +26,6 @@ console.log(`Using config:
 if (ENVIRONMENT !== 'production' && ENVIRONMENT !== 'dev') {
     throw new Error(ENVIRONMENT === 'unset' ? 'Missing valid .env configuration' : 'invalid environment')
 }
+
+await fs.writeFile(`${RECORDINGS_PATH}/access-test`, '')
+await fs.unlink(`${RECORDINGS_PATH}/access-test`)
