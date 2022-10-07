@@ -254,6 +254,18 @@ const handleRequestTeamsStart = async (interaction: ChatInputCommandInteraction<
         page,
         stopCallback: recording.stop
     })
+
+    await interaction.followUp({
+        content: 'Recording started!',
+        ephemeral: true,
+        components: [new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId(`stop-recording#${(currentState as any)?.options?.sessionId}`)
+                    .setLabel(`Stop recording`)
+                    .setStyle(ButtonStyle.Primary),
+            ) as any],
+    })
 }
 
 const handleInteraction = async (interaction: Interaction<CacheType>) => {

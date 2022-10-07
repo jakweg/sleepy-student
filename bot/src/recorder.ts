@@ -11,7 +11,6 @@ export const startRecording = async (page: Page, sessionId: string) => {
     const VIDEO_PATH = `${RECORDINGS_PATH}/current-video-${sessionId}.mp4`;
     const AUDIO_PATH = `${RECORDINGS_PATH}/current-audio-${sessionId}.m4a`;
 
-    // await recorder.start(VIDEO_PATH)
     const audioRecording = spawn('ffmpeg', ['-f', 'pulse', '-i', 'auto_null.monitor', '-y', AUDIO_PATH])
     const videoRecording = spawn('ffmpeg', ['-f', 'x11grab', '-framerate', '4', '-r', '4', '-video_size', `${WIDTH}x${HEIGHT}`, '-i', ':1.0', '-c:v', 'libx264', '-preset', 'superfast', '-pix_fmt', 'yuv420p', '-y', VIDEO_PATH])
 
