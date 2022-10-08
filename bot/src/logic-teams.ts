@@ -1,6 +1,13 @@
 import { Page } from "puppeteer"
-import { MS_TEAMS_CREDENTIALS_LOGIN, MS_TEAMS_CREDENTIALS_PASSWORD } from "./config"
+import { MS_TEAMS_CREDENTIALS_LOGIN, MS_TEAMS_CREDENTIALS_ORIGINS, MS_TEAMS_CREDENTIALS_PASSWORD } from "./config"
 import { sleep } from "./utils"
+
+const requireOriginForCredentials = (page: Page) => {
+    const url = page.url()
+    const origin = new URL(url).origin;
+    if (!MS_TEAMS_CREDENTIALS_ORIGINS.includes(origin))
+        throw new Error(`Origin ${origin} not permitted to enter credentials`)
+}
 
 export const startTeamsSession = async (url: string, page: Page) => {
 
@@ -16,6 +23,7 @@ export const startTeamsSession = async (url: string, page: Page) => {
     }
     if (willLogin) {
         await page.waitForSelector('input[type=email]')
+        requireOriginForCredentials(page)
         await page.type('input[type=email]', MS_TEAMS_CREDENTIALS_LOGIN!, { delay: 20 })
         await page.keyboard.press('Enter', { delay: 100 })
         await page.waitForSelector('input[type=password]', { timeout: 20_000, hidden: true })
@@ -23,12 +31,16 @@ export const startTeamsSession = async (url: string, page: Page) => {
         await page.waitForSelector('input[type=text]', { timeout: 20_000, })
 
         await page.evaluate(() => (document.querySelector('input[type=email]') as HTMLInputElement || {}).value = '')
+        requireOriginForCredentials(page)
         try { await page.type('input[type=email]', MS_TEAMS_CREDENTIALS_LOGIN!, { delay: 20 }) } catch (e) { }
+        requireOriginForCredentials(page)
         try { await page.type('input[type=text]', MS_TEAMS_CREDENTIALS_LOGIN!, { delay: 20 }) } catch (e) { }
+        requireOriginForCredentials(page)
         await page.type('input[type=password]', MS_TEAMS_CREDENTIALS_PASSWORD!, { delay: 20 })
         await page.keyboard.press('Enter', { delay: 100 })
         await page.waitForSelector('input[type=submit]', { hidden: true })
         await page.waitForSelector('input[type=submit]', { timeout: 20_000 })
+        requireOriginForCredentials(page)
         await page.click('input[type=submit]')
         await sleep(10_000)
     }

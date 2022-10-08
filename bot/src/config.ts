@@ -11,6 +11,7 @@ export const ALLOWED_CHANNELS = Object.freeze((process.env.ALLOWED_CHANNELS || '
 export const RECORDING_READY_MESSAGE_FORMAT = process.env.RECORDING_READY_MESSAGE_FORMAT || 'Recording ready %name%'
 export const MS_TEAMS_CREDENTIALS_LOGIN = process.env.MS_TEAMS_CREDENTIALS_LOGIN
 export const MS_TEAMS_CREDENTIALS_PASSWORD = process.env.MS_TEAMS_CREDENTIALS_PASSWORD
+export const MS_TEAMS_CREDENTIALS_ORIGINS = Object.freeze((process.env.MS_TEAMS_CREDENTIALS_ORIGINS || '').split(',').map(e => e.trim()))
 
 console.log(`Using config:
     ENVIRONMENT=${ENVIRONMENT}
@@ -21,6 +22,7 @@ console.log(`Using config:
     RECORDING_READY_MESSAGE_FORMAT=${RECORDING_READY_MESSAGE_FORMAT}
     MS_TEAMS_CREDENTIALS_LOGIN=${MS_TEAMS_CREDENTIALS_LOGIN}
     MS_TEAMS_CREDENTIALS_PASSWORD=${MS_TEAMS_CREDENTIALS_PASSWORD ? '*preset*' : '*none*'}
+    MS_TEAMS_CREDENTIALS_ORIGINS=${MS_TEAMS_CREDENTIALS_ORIGINS}
 `);
 
 if (ENVIRONMENT !== 'production' && ENVIRONMENT !== 'dev') {
