@@ -4,6 +4,7 @@ import { launch as launchBrowser } from './browser';
 import { HEIGHT, WIDTH } from './config';
 import { addStateListener, updateState } from './current-state';
 import { launch as launchDiscord } from './discord';
+import { initScheduler } from './scheduler';
 import { sleep } from './utils';
 
 try { spawnSync('pulseaudio', ['-D']) } catch (e) { void e }
@@ -11,13 +12,13 @@ try { spawn('Xvfb', [':1', '-screen', '0', `${WIDTH}x${HEIGHT}x16`]) } catch (e)
 await sleep(500)
 
 const browser = await launchBrowser()
-const ds = await launchDiscord()
+export const DISCORD = await launchDiscord()
 
 addStateListener(state => {
-    if (state.type === 'recording-webex')
-        ds.user?.setActivity({ name: 'Recording session for You', type: ActivityType.Watching })
+    if (state.type === 'recording-webex' || state.type === 'recording-teams')
+        DISCORD.user?.setActivity({ name: 'Recording session for You', type: ActivityType.Watching })
     else
-        ds.user?.setActivity(undefined)
+        DISCORD.user?.setActivity(undefined)
 })
 
 addStateListener(state => {
@@ -27,3 +28,5 @@ addStateListener(state => {
 updateState({
     page: (await browser.pages())[0] ?? await browser.newPage(),
 })
+
+initScheduler()

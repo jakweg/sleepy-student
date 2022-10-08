@@ -236,7 +236,7 @@ const handleScheduleRequest = async (interaction: ChatInputCommandInteraction<Ca
     else if (diff.totalMinutes > 0)
         inText += rtf.format(diff.totalMinutes, 'minute')
     else
-        inText += rtf.format(diff.totalMinutes, 'second')
+        inText += rtf.format(diff.totalSeconds, 'second')
 
     const scheduled = await scheduleNewRecording({
         url: url!,
@@ -248,7 +248,7 @@ const handleScheduleRequest = async (interaction: ChatInputCommandInteraction<Ca
     })
 
     await interaction.followUp({
-        content: `Scheduled recording ${name || '(unnamed)'} for \`${date.toLocaleString(LOCALE)}\` (\`${inText}\`) with id \`${scheduled.id}\``,
+        content: `Scheduled recording \`${name || '(unnamed)'}\` for \`${date.toLocaleString(LOCALE)}\` (\`${inText}\`) with id \`${scheduled.id}\``,
         ephemeral: true
     });
 }

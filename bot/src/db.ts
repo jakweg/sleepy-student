@@ -3,6 +3,7 @@ import { DB_PATH } from './config';
 
 
 export type ScheduledRecording = Readonly<{
+    id: string
     url: string
     name: string | null
     type: string
@@ -11,12 +12,8 @@ export type ScheduledRecording = Readonly<{
     channel: string
 }>
 
-export type ScheduledRecordingWithId = Readonly<{
-    id: string
-} & ScheduledRecording>
-
 interface Database {
-    scheduledRecordings: { [key: string]: ScheduledRecording }
+    scheduledRecordings: { [key: string]: Omit<ScheduledRecording, 'id'> }
 }
 
 const initDb = async (): Promise<Database> => {
@@ -46,26 +43,22 @@ const saveDb = async () => {
     await writeFile(DB_PATH, JSON.stringify(instance, undefined, 1), { encoding: 'utf8' })
 }
 
-export const scheduleNewRecording = async (data: ScheduledRecording): Promise<ScheduledRecordingWithId> => {
+export const scheduleNewRecording = async (data: Omit<ScheduledRecording, 'id'>): Promise<ScheduledRecording> => {
     if (data.timestamp < Date.now())
         throw new Error(`Attempt to schedule recording in the past`)
 
     const id = (Math.random() * 0xFFFFFF | 0).toString(16).padStart(6, '0')
 
-    const object: ScheduledRecording = Object.freeze({
-        ...data
-    })
-
     if (instance.scheduledRecordings[id] !== undefined)
         return scheduleNewRecording(data)
 
-    instance.scheduledRecordings[id] = object
+    instance.scheduledRecordings[id] = { ...data }
     await saveDb()
 
-    return { id, ...object }
+    return { id, ...data }
 }
 
-export const popFromThePast = async (): Promise<ReadonlyArray<ScheduledRecordingWithId>> => {
+export const popFromThePast = async (): Promise<ReadonlyArray<ScheduledRecording>> => {
     const now = Date.now()
     const toReturn = Object
         .entries(instance.scheduledRecordings)
@@ -81,7 +74,7 @@ export const popFromThePast = async (): Promise<ReadonlyArray<ScheduledRecording
     return toReturn
 }
 
-export const getAll = (): ReadonlyArray<ScheduledRecordingWithId> => {
+export const getAll = (): ReadonlyArray<ScheduledRecording> => {
     const toReturn = Object
         .entries(instance.scheduledRecordings)
         .map(e => ({ id: e[0], ...e[1] }))
@@ -90,7 +83,7 @@ export const getAll = (): ReadonlyArray<ScheduledRecordingWithId> => {
 }
 
 
-export const findById = (id: string): ScheduledRecordingWithId | null => {
+export const findById = (id: string): ScheduledRecording | null => {
     const found = instance.scheduledRecordings[id]
     if (found)
         return { id, ...found }
@@ -98,7 +91,7 @@ export const findById = (id: string): ScheduledRecordingWithId | null => {
 }
 
 
-export const deleteById = async (id: string): Promise<ScheduledRecordingWithId | null> => {
+export const deleteById = async (id: string): Promise<ScheduledRecording | null> => {
     const found = instance.scheduledRecordings[id]
     if (found) {
         delete instance.scheduledRecordings[id]
