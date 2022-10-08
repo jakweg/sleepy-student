@@ -136,9 +136,10 @@ const handleSolveButtonClicked = async (interaction: ButtonInteraction<CacheType
     })
 
 
+    let messageId: string | null = null
     if (isScheduled)
-        result.channel?.send({
-            content: `Scheduled recording started`,
+        messageId = (await result.channel?.send({
+            content: `Scheduled recording \`${currentState.options?.scheduled?.name || 'unnamed'}\` started`,
             components: [new ActionRowBuilder()
                 .addComponents(
                     new ButtonBuilder()
@@ -146,9 +147,9 @@ const handleSolveButtonClicked = async (interaction: ButtonInteraction<CacheType
                         .setLabel(`Stop`)
                         .setStyle(ButtonStyle.Danger),
                 ) as any],
-        })
+        }))?.id ?? null
     else
-        result.followUp({
+        messageId = (await result.followUp({
             ephemeral: !isScheduled,
             content: 'Recording started',
             components: [new ActionRowBuilder()
@@ -158,7 +159,11 @@ const handleSolveButtonClicked = async (interaction: ButtonInteraction<CacheType
                         .setLabel(`Stop`)
                         .setStyle(ButtonStyle.Danger),
                 ) as any],
-        })
+        })).id
+
+    updateState({
+        stopRecordingButtonId: messageId
+    })
 }
 
 const handleStopRecordingClicked = async (interaction: ButtonInteraction<CacheType> | ChatInputCommandInteraction<CacheType>, session: string | null) => {
@@ -184,8 +189,20 @@ const handleStopRecordingClicked = async (interaction: ButtonInteraction<CacheTy
         type: "idle",
         stopRecordingCallback: () => { }
     })
+
+    if (currentState.stopRecordingButtonId) {
+        interaction.channel?.messages.edit(currentState.stopRecordingButtonId, {
+            content: 'Scheduled recording started and then stopped',
+            components: [],
+        }).catch(e => void (e))
+    }
+
+    if (scheduled)
+        await interaction.channel?.send({
+            content: `Recording of ${scheduled.name || 'unnamed session'} stopped by <@${interaction.user.id}>`,
+        })
     await interaction.reply({
-        content: `Stopped recording`,
+        content: `Stopped recording by your command`,
         ephemeral: true,
     })
 
