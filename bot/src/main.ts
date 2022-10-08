@@ -2,7 +2,7 @@ import { spawn, spawnSync } from 'child_process';
 import { ActivityType } from 'discord.js';
 import { launch as launchBrowser } from './browser';
 import { HEIGHT, WIDTH } from './config';
-import { addStateListener, setCurrentState } from './current-state';
+import { addStateListener, updateState } from './current-state';
 import { launch as launchDiscord } from './discord';
 import { sleep } from './utils';
 
@@ -24,7 +24,6 @@ addStateListener(state => {
     console.log('changed state to', state.type);
 })
 
-setCurrentState({
-    type: 'idle',
+updateState({
     page: (await browser.pages())[0] ?? await browser.newPage(),
 })

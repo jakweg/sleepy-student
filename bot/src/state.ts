@@ -6,34 +6,11 @@ export interface RecordingStartOptions {
     showChat: boolean
 }
 
-export type State = { type: 'none' }
-    | {
-        type: 'idle'
-        page: puppeteer.Page
-    } | {
-        type: 'preparing-for-webex-captcha'
-        options: RecordingStartOptions
-        page: puppeteer.Page
-    } | {
-        type: 'waiting-for-solution-for-webex-captcha'
-        options: RecordingStartOptions
-        page: puppeteer.Page
-    } | {
-        type: 'joining-webex'
-        options: RecordingStartOptions
-        page: puppeteer.Page
-    } | {
-        type: 'recording-webex'
-        options: RecordingStartOptions
-        page: puppeteer.Page
-        stopCallback: (callback: (name: string) => void) => void
-    } | {
-        type: 'joining-teams'
-        options: RecordingStartOptions
-        page: puppeteer.Page
-    } | {
-        type: 'recording-teams'
-        options: RecordingStartOptions
-        page: puppeteer.Page
-        stopCallback: (callback: (name: string) => void) => void
-    }
+export const defaultState = {
+    type: 'idle' as 'idle' | 'preparing-for-webex-captcha' | 'waiting-for-solution-for-webex-captcha' | 'joining-webex' | 'recording-webex' | 'joining-teams' | 'recording-teams',
+    page: (null as any) as puppeteer.Page,
+    options: null as (RecordingStartOptions | null),
+    stopRecordingCallback: (whenFinished: (name: string) => void) => { }
+}
+
+export type State = typeof defaultState

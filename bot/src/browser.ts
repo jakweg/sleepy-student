@@ -1,10 +1,18 @@
+import { stat } from 'fs/promises';
 import * as puppeteer from 'puppeteer';
-import { DEBUG, HEIGHT, WIDTH } from './config';
+import { HEIGHT, WIDTH } from './config';
 
 export const launch = async () => {
+    let browserPath: string | undefined = '/usr/bin/google-chrome-stable'
+    try {
+        if (!(await stat(browserPath)).isFile())
+            browserPath = undefined
+    } catch (_) {
+        browserPath = undefined
+    }
     return await puppeteer.launch({
         headless: false,
-        executablePath: DEBUG ? undefined : '/usr/bin/google-chrome-stable',
+        executablePath: browserPath,
         product: 'chrome',
         defaultViewport: null,
         ignoreDefaultArgs: [

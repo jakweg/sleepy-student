@@ -1,6 +1,6 @@
 import { Page } from "puppeteer"
 import { RECORDINGS_PATH } from "./config"
-import { currentState } from './current-state'
+import { currentState } from "./current-state"
 import { startRecording } from './recorder'
 import { sleep } from "./utils"
 
@@ -85,11 +85,11 @@ export const fillCaptchaAndJoin = async (page: Page, captcha: string, sessionId:
         .then(() => frame.click('[title="Got it"]'))
         .catch(e => void (e))
 
-    if (currentState.type === 'joining-webex' && currentState.options.showChat)
+    if (currentState.type === 'joining-webex' && currentState.options?.showChat)
         frame.waitForSelector('[data-doi="CHAT:OPEN_CHAT_PANEL:MENU_CONTROL_BAR"]', { timeout: 5000 })
             .then(() => sleep(1000))
             .then(() => frame.click('[data-doi="CHAT:OPEN_CHAT_PANEL:MENU_CONTROL_BAR"]'))
             .catch(e => void (e))
 
-    return { recordingStopper: (await startRecording(page, sessionId)).stop }
+    return await startRecording(page, sessionId)
 }

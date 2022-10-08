@@ -1,24 +1,18 @@
 import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, CacheType, ChatInputCommandInteraction, Client, Interaction, ModalBuilder, REST, Routes, SlashCommandBooleanOption, SlashCommandBuilder, SlashCommandStringOption, TextInputBuilder, TextInputStyle } from "discord.js";
 import { ALLOWED_CHANNELS, MS_TEAMS_CREDENTIALS_LOGIN, MS_TEAMS_CREDENTIALS_PASSWORD, RECORDINGS_PATH, RECORDING_READY_MESSAGE_FORMAT } from "./config";
-import { currentState, setCurrentState } from "./current-state";
+import { assertActiveSession, currentState, updateState } from "./current-state";
 import { startTeamsSession } from "./logic-teams";
 import { createWebexSession, fillCaptchaAndJoin } from "./logic-webex";
 import { startRecording } from "./recorder";
 
 const startWebex = async (sessionId: string, interaction: ChatInputCommandInteraction<CacheType>) => {
+    assertActiveSession(sessionId)
 
-    if (currentState.type !== 'preparing-for-webex-captcha' || currentState.options.sessionId !== sessionId)
-        return
+    const webex = await createWebexSession(currentState.page, currentState.options!.url)
 
-    const webex = await createWebexSession(currentState.page, currentState.options.url)
-
-    if (currentState.type !== 'preparing-for-webex-captcha' || currentState.options.sessionId !== sessionId)
-        return
-
-    setCurrentState({
-        type: "waiting-for-solution-for-webex-captcha",
-        options: currentState.options,
-        page: currentState.page,
+    assertActiveSession(sessionId)
+    updateState({
+        type: 'waiting-for-solution-for-webex-captcha',
     })
 
     const attachment = new AttachmentBuilder(webex.captchaImage);
@@ -50,10 +44,9 @@ const handleRequestWebexStart = async (interaction: ChatInputCommandInteraction<
     const url = interaction.options.getString('url')!
     const showChat = !!interaction.options.getBoolean('show-chat')
 
-    setCurrentState({
+    updateState({
         type: "preparing-for-webex-captcha",
         options: { sessionId: session, showChat, url },
-        page: currentState.page,
     })
 
 
@@ -63,22 +56,22 @@ const handleRequestWebexStart = async (interaction: ChatInputCommandInteraction<
     })
 
     try {
-        startWebex(session, interaction)
+        await startWebex(session, interaction)
     } catch (e) {
         console.error(e)
         interaction.followUp({
             content: 'Something went wrong',
             ephemeral: true
         });
-        setCurrentState({
+        assertActiveSession(session)
+        updateState({
             type: "idle",
-            page: currentState.page,
         })
     }
 }
 
 const handleSolveButtonClicked = async (interaction: ButtonInteraction<CacheType>, session: string) => {
-    if (currentState.type !== 'waiting-for-solution-for-webex-captcha') {
+    if (!session || currentState.type !== 'waiting-for-solution-for-webex-captcha') {
         await interaction.reply({
             content: `Sorry, but I'm busy now`,
             ephemeral: true,
@@ -87,7 +80,7 @@ const handleSolveButtonClicked = async (interaction: ButtonInteraction<CacheType
     }
 
     const modal = new ModalBuilder()
-        .setCustomId(`captcha-modal#${currentState.options.sessionId}`)
+        .setCustomId(`captcha-modal#${session}`)
         .setTitle('Solve the captcha');
 
     const resultInput = new TextInputBuilder()
@@ -105,8 +98,9 @@ const handleSolveButtonClicked = async (interaction: ButtonInteraction<CacheType
 
     const captcha = result.fields.getTextInputValue('captcha-result')
 
-    if (currentState.type !== 'waiting-for-solution-for-webex-captcha') {
-        await interaction.reply({
+    try { assertActiveSession(session) }
+    catch (_) {
+        interaction.reply({
             content: `To late :(`,
             ephemeral: true,
         })
@@ -118,19 +112,18 @@ const handleSolveButtonClicked = async (interaction: ButtonInteraction<CacheType
         content: 'Thanks!',
     })
 
-    setCurrentState({
-        type: "joining-webex",
-        options: currentState.options,
-        page: currentState.page,
+    updateState({
+        type: 'joining-webex'
     })
-    const runningWebex = await fillCaptchaAndJoin(currentState.page, captcha, currentState.options.sessionId)
 
-    setCurrentState({
-        type: "recording-webex",
-        options: currentState.options,
-        page: currentState.page,
-        stopCallback: runningWebex.recordingStopper
+    const runningWebex = await fillCaptchaAndJoin(currentState.page, captcha, session)
+    assertActiveSession(session)
+
+    updateState({
+        type: 'recording-webex',
+        stopRecordingCallback: runningWebex.stop,
     })
+
     result.followUp({
         ephemeral: true,
         content: 'Recording started',
@@ -152,7 +145,8 @@ const handleStopRecordingClicked = async (interaction: ButtonInteraction<CacheTy
         })
         return
     }
-    if (session !== null && currentState.options.sessionId !== session) {
+
+    if (session !== null && currentState.options?.sessionId !== session) {
         await interaction.reply({
             content: `Outdated button`,
             ephemeral: true,
@@ -160,10 +154,10 @@ const handleStopRecordingClicked = async (interaction: ButtonInteraction<CacheTy
         return
     }
 
-    const stopCallback = currentState.stopCallback
-    setCurrentState({
+    const stopCallback = currentState.stopRecordingCallback
+    updateState({
         type: "idle",
-        page: currentState.page,
+        stopRecordingCallback: () => { }
     })
     await interaction.reply({
         content: `Stopped recording`,
@@ -180,8 +174,6 @@ const handleStopRecordingClicked = async (interaction: ButtonInteraction<CacheTy
 
 const handleScreenshotRequest = async (interaction: ChatInputCommandInteraction<CacheType>) => {
     await interaction.deferReply({ ephemeral: true })
-    if (currentState.type === 'none')
-        return
 
     const screenshotData = await currentState.page.screenshot({ captureBeyondViewport: true, fullPage: true, type: 'jpeg' })
 
@@ -202,6 +194,7 @@ const handleRequestTeamsStart = async (interaction: ChatInputCommandInteraction<
         })
         return
     }
+
     if (!MS_TEAMS_CREDENTIALS_LOGIN || !MS_TEAMS_CREDENTIALS_PASSWORD) {
         await interaction.reply({
             content: `teams are disabled`,
@@ -213,13 +206,13 @@ const handleRequestTeamsStart = async (interaction: ChatInputCommandInteraction<
     const page = currentState.page
     const url = interaction.options.getString('url')!
 
-    setCurrentState({
+    const session = `${Date.now()}`
+    updateState({
         type: 'joining-teams',
         options: {
-            sessionId: `${Date.now()}`,
+            sessionId: session,
             showChat: false, url
         },
-        page,
     })
 
     await interaction.reply({
@@ -234,9 +227,8 @@ const handleRequestTeamsStart = async (interaction: ChatInputCommandInteraction<
 
         await page.screenshot({ captureBeyondViewport: true, fullPage: true, path: `${RECORDINGS_PATH}/debug-failed-teams.png` })
         await page.goto('about:blank', { waitUntil: 'networkidle2' })
-        setCurrentState({
+        updateState({
             type: 'idle',
-            page,
         })
 
         await interaction.followUp({
@@ -245,14 +237,13 @@ const handleRequestTeamsStart = async (interaction: ChatInputCommandInteraction<
         })
         return
     }
+    assertActiveSession(session)
 
-    const recording = await startRecording(page, (currentState as any).options.sessionId)
+    const recording = await startRecording(page, session)
 
-    setCurrentState({
+    updateState({
         type: 'recording-teams',
-        options: (currentState as any).options,
-        page,
-        stopCallback: recording.stop
+        stopRecordingCallback: recording.stop
     })
 
     await interaction.followUp({
@@ -261,7 +252,7 @@ const handleRequestTeamsStart = async (interaction: ChatInputCommandInteraction<
         components: [new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()
-                    .setCustomId(`stop-recording#${(currentState as any)?.options?.sessionId}`)
+                    .setCustomId(`stop-recording#${session}`)
                     .setLabel(`Stop recording`)
                     .setStyle(ButtonStyle.Primary),
             ) as any],
@@ -276,6 +267,7 @@ const handleInteraction = async (interaction: Interaction<CacheType>) => {
         return
     }
 
+    console.log(`Invoked ${interaction.toString()} by ${interaction.user.username} (${interaction.user.id}) in ${interaction.channelId}`)
 
     if (interaction.isChatInputCommand()) {
         const { commandName } = interaction;
