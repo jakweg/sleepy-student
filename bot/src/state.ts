@@ -1,9 +1,11 @@
 import * as puppeteer from 'puppeteer';
+import { ScheduledRecording } from './db';
 
 export interface RecordingStartOptions {
     sessionId: string
     url: string
     showChat: boolean
+    scheduled?: ScheduledRecording
 }
 
 export const defaultState = {

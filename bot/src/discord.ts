@@ -1,7 +1,6 @@
 import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, CacheType, ChatInputCommandInteraction, Client, Interaction, ModalBuilder, REST, Routes, SlashCommandBooleanOption, SlashCommandBuilder, SlashCommandStringOption, TextInputBuilder, TextInputStyle } from "discord.js";
 import { ALLOWED_CHANNELS, LOCALE, MS_TEAMS_CREDENTIALS_LOGIN, MS_TEAMS_CREDENTIALS_PASSWORD, RECORDINGS_PATH, RECORDING_READY_MESSAGE_FORMAT } from "./config";
 import { assertActiveSession, currentState, updateState } from "./current-state";
-import './db';
 import { deleteById, findById, getAll, scheduleNewRecording } from "./db";
 import { startTeamsSession } from "./logic-teams";
 import { createWebexSession, fillCaptchaAndJoin } from "./logic-webex";
@@ -72,7 +71,7 @@ const handleRequestWebexStart = async (interaction: ChatInputCommandInteraction<
     }
 }
 
-const handleSolveButtonClicked = async (interaction: ButtonInteraction<CacheType>, session: string) => {
+const handleSolveButtonClicked = async (interaction: ButtonInteraction<CacheType>, session: string, isScheduled: boolean) => {
     if (!session || currentState.type !== 'waiting-for-solution-for-webex-captcha') {
         await interaction.reply({
             content: `Sorry, but I'm busy now`,
@@ -100,6 +99,8 @@ const handleSolveButtonClicked = async (interaction: ButtonInteraction<CacheType
 
     const captcha = result.fields.getTextInputValue('captcha-result')
 
+    if (isScheduled)
+        interaction.message.delete()
     try { assertActiveSession(session) }
     catch (_) {
         interaction.reply({
@@ -109,10 +110,18 @@ const handleSolveButtonClicked = async (interaction: ButtonInteraction<CacheType
         return
     }
 
-    result.reply({
-        ephemeral: true,
-        content: 'Thanks!',
-    })
+
+    if (isScheduled) {
+        result.reply({ ephemeral: true, content: 'Thanks, it really means a lot for me' })
+        result.channel?.send({
+            content: `Thank you <@${interaction.user.id}> :heart: You are truly my hero of the day`,
+        })
+    }
+    else
+        result.reply({
+            ephemeral: true,
+            content: 'Thanks!',
+        })
 
     updateState({
         type: 'joining-webex'
@@ -126,17 +135,30 @@ const handleSolveButtonClicked = async (interaction: ButtonInteraction<CacheType
         stopRecordingCallback: runningWebex.stop,
     })
 
-    result.followUp({
-        ephemeral: true,
-        content: 'Recording started',
-        components: [new ActionRowBuilder()
-            .addComponents(
-                new ButtonBuilder()
-                    .setCustomId(`stop-recording#${session}`)
-                    .setLabel(`Stop recording`)
-                    .setStyle(ButtonStyle.Primary),
-            ) as any],
-    })
+
+    if (isScheduled)
+        result.channel?.send({
+            content: `Scheduled recording started`,
+            components: [new ActionRowBuilder()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId(`stop-recording#${session}`)
+                        .setLabel(`Stop`)
+                        .setStyle(ButtonStyle.Danger),
+                ) as any],
+        })
+    else
+        result.followUp({
+            ephemeral: !isScheduled,
+            content: 'Recording started',
+            components: [new ActionRowBuilder()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId(`stop-recording#${session}`)
+                        .setLabel(`Stop`)
+                        .setStyle(ButtonStyle.Danger),
+                ) as any],
+        })
 }
 
 const handleStopRecordingClicked = async (interaction: ButtonInteraction<CacheType> | ChatInputCommandInteraction<CacheType>, session: string | null) => {
@@ -157,6 +179,7 @@ const handleStopRecordingClicked = async (interaction: ButtonInteraction<CacheTy
     }
 
     const stopCallback = currentState.stopRecordingCallback
+    const scheduled = currentState.options?.scheduled
     updateState({
         type: "idle",
         stopRecordingCallback: () => { }
@@ -166,7 +189,16 @@ const handleStopRecordingClicked = async (interaction: ButtonInteraction<CacheTy
         ephemeral: true,
     })
 
-    stopCallback(name => {
+    stopCallback(async name => {
+        if (scheduled) {
+            const channel = await interaction.client.channels.fetch(scheduled.channel)
+            if (channel?.isTextBased()) {
+                channel.send({
+                    content: RECORDING_READY_MESSAGE_FORMAT.replace('%name%', name),
+                })
+                return
+            }
+        }
         interaction.followUp({
             content: RECORDING_READY_MESSAGE_FORMAT.replace('%name%', name),
             ephemeral: true,
@@ -249,7 +281,14 @@ const handleScheduleRequest = async (interaction: ChatInputCommandInteraction<Ca
 
     await interaction.followUp({
         content: `Scheduled recording \`${name || '(unnamed)'}\` for \`${date.toLocaleString(LOCALE)}\` (\`${inText}\`) with id \`${scheduled.id}\``,
-        ephemeral: true
+        ephemeral: true,
+        components: [new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId(`delete-scheduled#${scheduled.id}`)
+                    .setLabel(`Undo`)
+                    .setStyle(ButtonStyle.Secondary),
+            ) as any],
     });
 }
 
@@ -278,7 +317,7 @@ const handleRequestTeamsStart = async (interaction: ChatInputCommandInteraction<
         type: 'joining-teams',
         options: {
             sessionId: session,
-            showChat: false, url
+            showChat: false, url,
         },
     })
 
@@ -314,14 +353,14 @@ const handleRequestTeamsStart = async (interaction: ChatInputCommandInteraction<
     })
 
     await interaction.followUp({
-        content: 'Recording started!',
+        content: 'Recording started',
         ephemeral: true,
         components: [new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()
                     .setCustomId(`stop-recording#${session}`)
                     .setLabel(`Stop recording`)
-                    .setStyle(ButtonStyle.Primary),
+                    .setStyle(ButtonStyle.Danger),
             ) as any],
     })
 }
@@ -419,7 +458,9 @@ const handleInteraction = async (interaction: Interaction<CacheType>) => {
     } else if (interaction.isButton()) {
         const [customId, session] = interaction.customId.split('#')
         if (customId === 'solve-captcha-button') {
-            handleSolveButtonClicked(interaction, session)
+            handleSolveButtonClicked(interaction, session, false)
+        } else if (customId === 'solve-captcha-scheduled-button') {
+            handleSolveButtonClicked(interaction, session, true)
         } else if (customId === 'stop-recording') {
             handleStopRecordingClicked(interaction, session)
         } else if (customId === 'delete-scheduled') {
