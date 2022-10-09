@@ -1,5 +1,5 @@
 import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, CacheType, ChatInputCommandInteraction, Client, Interaction, ModalBuilder, REST, Routes, SlashCommandBooleanOption, SlashCommandBuilder, SlashCommandStringOption, TextInputBuilder, TextInputStyle } from "discord.js";
-import { ALLOWED_CHANNELS, LOCALE, MAX_MEETING_LENGTH_MINUTES, MS_TEAMS_CREDENTIALS_LOGIN, MS_TEAMS_CREDENTIALS_PASSWORD, RECORDINGS_PATH, RECORDING_READY_MESSAGE_FORMAT } from "./config";
+import { ALLOWED_CHANNELS, LOCALE, MAX_MEETING_DURATION_MINUTES, MS_TEAMS_CREDENTIALS_LOGIN, MS_TEAMS_CREDENTIALS_PASSWORD, RECORDINGS_PATH, RECORDING_READY_MESSAGE_FORMAT } from "./config";
 import { assertActiveSession, currentState, updateState } from "./current-state";
 import { deleteById, findById, getAll, ScheduledRecording, scheduleNewRecording } from "./db";
 import { startTeamsSession } from "./logic-teams";
@@ -187,7 +187,7 @@ const handleSolveButtonClicked = async (interaction: ButtonInteraction<CacheType
                     content: 'Recording stopped after 90 minutes',
                 })
         } catch (e) { }
-    }, MAX_MEETING_LENGTH_MINUTES * 60 * 1_000);
+    }, MAX_MEETING_DURATION_MINUTES * 60 * 1_000);
 
     Promise.resolve()
         .then(async () => {
@@ -420,7 +420,7 @@ const handleRequestTeamsStart = async (interaction: ChatInputCommandInteraction<
     })
 
     const scheduled = currentState.options?.scheduled
-    sleep(MAX_MEETING_LENGTH_MINUTES * 60 * 1000)
+    sleep(MAX_MEETING_DURATION_MINUTES * 60 * 1000)
         .then(async () => {
             try {
                 assertActiveSession(session)

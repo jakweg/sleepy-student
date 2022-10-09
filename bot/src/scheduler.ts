@@ -1,5 +1,5 @@
 import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
-import { MAX_MEETING_LENGTH_MINUTES, RECORDINGS_PATH, SCHEDULER_INTERVAL_MS } from "./config";
+import { MAX_MEETING_DURATION_MINUTES, RECORDINGS_PATH, SCHEDULER_INTERVAL_MS } from "./config";
 import { assertActiveSession, currentState, updateState } from "./current-state";
 import { popFromThePast, ScheduledRecording } from "./db";
 import { publishRecordingReadyMessage } from "./discord-stuff";
@@ -115,7 +115,7 @@ const startTeams = async (entry: ScheduledRecording) => {
     })
 
     const scheduled = currentState.options?.scheduled
-    sleep(MAX_MEETING_LENGTH_MINUTES * 60 * 1000)
+    sleep(MAX_MEETING_DURATION_MINUTES * 60 * 1000)
         .then(async () => {
             try {
                 assertActiveSession(session)

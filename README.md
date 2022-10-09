@@ -16,7 +16,7 @@ RECORDINGS_PATH=/where/to/store/recordings docker-compose up --build
 |             LOCALE             |           `en`           |                                                     for dates formatting                                                     |
 |             WIDTH              |          `1280`          |                                               width of the recording in pixels                                               |
 |             HEIGHT             |          `720`           |                                              height of the recording in pixels                                               |
-|   MAX_MEETING_LENGTH_MINUTES   |           `90`           |                                duration after a recording will always be stopped, in minutes                                 |
+|  MAX_MEETING_DURATION_MINUTES  |           `90`           |                                duration after a recording will always be stopped, in minutes                                 |
 |        ALLOWED_CHANNELS        |                          |                       comma separated list of Discord channel ids which can be used to invoke commands                       |
 | RECORDING_READY_MESSAGE_FORMAT | `Recording ready %name%` |             message which gets sent once the recording is ready, `%name%` gets replaced with recording file name             |
 |   MS_TEAMS_CREDENTIALS_LOGIN   |                          |                                                     your MS Teams email                                                      |
