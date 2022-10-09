@@ -30,7 +30,7 @@ export const startTeamsSession = async (url: string, page: Page) => {
         await page.waitForSelector('input[type=password]', { timeout: 20_000, })
         await page.waitForSelector('input[type=text]', { timeout: 20_000, })
 
-        await page.evaluate(() => (document.querySelector('input[type=email]') as HTMLInputElement || {}).value = '')
+        await page.evaluate(() => (document.querySelector('input[type=email]') as HTMLInputElement || { value: '' }).value = '')
         requireOriginForCredentials(page)
         try { await page.type('input[type=email]', MS_TEAMS_CREDENTIALS_LOGIN!, { delay: 20 }) } catch (e) { }
         requireOriginForCredentials(page)

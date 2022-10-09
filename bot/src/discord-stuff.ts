@@ -1,5 +1,5 @@
 import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, CacheType, ChatInputCommandInteraction, Client, Interaction, ModalBuilder, REST, Routes, SlashCommandBooleanOption, SlashCommandBuilder, SlashCommandStringOption, TextInputBuilder, TextInputStyle } from "discord.js";
-import { ALLOWED_CHANNELS, LOCALE, MS_TEAMS_CREDENTIALS_LOGIN, MS_TEAMS_CREDENTIALS_PASSWORD, RECORDINGS_PATH, RECORDING_READY_MESSAGE_FORMAT } from "./config";
+import { ALLOWED_CHANNELS, LOCALE, MAX_MEETING_LENGTH_MINUTES, MS_TEAMS_CREDENTIALS_LOGIN, MS_TEAMS_CREDENTIALS_PASSWORD, RECORDINGS_PATH, RECORDING_READY_MESSAGE_FORMAT } from "./config";
 import { assertActiveSession, currentState, updateState } from "./current-state";
 import { deleteById, findById, getAll, ScheduledRecording, scheduleNewRecording } from "./db";
 import { startTeamsSession } from "./logic-teams";
@@ -172,9 +172,27 @@ const handleSolveButtonClicked = async (interaction: ButtonInteraction<CacheType
 
     const scheduled = currentState.options?.scheduled
 
+    setTimeout(async () => {
+        try {
+            assertActiveSession(session)
+            await stopRecording(publishRecordingReadyMessage(scheduled, interaction))
+
+            if (isScheduled)
+                await result.channel?.send({
+                    content: `Scheduled recording stopped after 90 minutes`,
+                })
+            else
+                await result.followUp({
+                    ephemeral: !isScheduled,
+                    content: 'Recording stopped after 90 minutes',
+                })
+        } catch (e) { }
+    }, MAX_MEETING_LENGTH_MINUTES * 60 * 1_000);
+
     Promise.resolve()
         .then(async () => {
             while (true) {
+                assertActiveSession(session)
                 if (await runningWebex.isMeetingStopped()) {
                     await stopRecording(publishRecordingReadyMessage(scheduled, interaction))
 
@@ -194,7 +212,7 @@ const handleSolveButtonClicked = async (interaction: ButtonInteraction<CacheType
         .catch(e => void (e))
 }
 
-const publishRecordingReadyMessage = (scheduled: ScheduledRecording, interaction: null | ButtonInteraction | ChatInputCommandInteraction) => async (name: string) => {
+export const publishRecordingReadyMessage = (scheduled: ScheduledRecording, interaction: null | ButtonInteraction | ChatInputCommandInteraction) => async (name: string) => {
     try {
         if (scheduled) {
             const channel = await DISCORD.channels.fetch(scheduled.channel)
@@ -400,6 +418,19 @@ const handleRequestTeamsStart = async (interaction: ChatInputCommandInteraction<
                     .setStyle(ButtonStyle.Danger),
             ) as any],
     })
+
+    const scheduled = currentState.options?.scheduled
+    sleep(MAX_MEETING_LENGTH_MINUTES * 60 * 1000)
+        .then(async () => {
+            try {
+                assertActiveSession(session)
+                await stopRecording(publishRecordingReadyMessage(scheduled, null))
+
+                await interaction.reply({
+                    content: `Scheduled recording stopped after 90 minutes`,
+                })
+            } catch (e) { }
+        },);
 }
 
 const handleDeleteScheduledClicked = async (interaction: ButtonInteraction<CacheType>, id: string | null) => {

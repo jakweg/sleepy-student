@@ -1,11 +1,13 @@
 import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
-import { RECORDINGS_PATH, SCHEDULER_INTERVAL_MS } from "./config";
+import { MAX_MEETING_LENGTH_MINUTES, RECORDINGS_PATH, SCHEDULER_INTERVAL_MS } from "./config";
 import { assertActiveSession, currentState, updateState } from "./current-state";
 import { popFromThePast, ScheduledRecording } from "./db";
+import { publishRecordingReadyMessage } from "./discord-stuff";
 import { startTeamsSession } from "./logic-teams";
 import { createWebexSession } from "./logic-webex";
 import { DISCORD } from "./main";
-import { startRecording } from "./recorder";
+import { startRecording, stopRecording } from "./recorder";
+import { sleep } from "./utils";
 
 const startWebex = async (entry: ScheduledRecording) => {
     const channel = await DISCORD.channels.fetch(entry.channel)
@@ -111,6 +113,19 @@ const startTeams = async (entry: ScheduledRecording) => {
                     .setStyle(ButtonStyle.Primary),
             ) as any],
     })
+
+    const scheduled = currentState.options?.scheduled
+    sleep(MAX_MEETING_LENGTH_MINUTES * 60 * 1000)
+        .then(async () => {
+            try {
+                assertActiveSession(session)
+                await stopRecording(publishRecordingReadyMessage(scheduled, null))
+
+                await initialMessage.reply({
+                    content: `Scheduled recording stopped after 90 minutes`,
+                })
+            } catch (e) { }
+        },);
 }
 
 const doCheck = async () => {
