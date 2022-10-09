@@ -3,7 +3,7 @@ import { ActivityType } from 'discord.js';
 import { launch as launchBrowser } from './browser';
 import { HEIGHT, WIDTH } from './config';
 import { addStateListener, updateState } from './current-state';
-import { launch as launchDiscord } from './discord';
+import { launch as launchDiscord } from './discord-stuff';
 import { initScheduler } from './scheduler';
 import { sleep } from './utils';
 

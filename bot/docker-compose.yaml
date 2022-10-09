@@ -1,0 +1,11 @@
+version: '3'
+volumes:
+  persistent:
+
+services:
+  bot:
+    build: .
+    restart: unless-stopped
+    volumes:
+      - ${RECORDINGS_PATH:?Path on the disk where to store ready recordings}:/recordings:rw
+      - persistent:/persistent:rw
