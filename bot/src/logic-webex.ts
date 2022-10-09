@@ -18,9 +18,12 @@ export const createWebexSession = async (page: Page, url: string) => {
     const getCaptchaImage = async () => {
         for (let i = 0; i < 10; ++i) {
             const img = (await Promise.all((page.frames()).map(e => e.$('#verificationImage')))).find(e => e)
-            if (img) return await img.screenshot({ captureBeyondViewport: true, type: 'png' })
-            await sleep(1000)
+            if (img) {
+                await sleep(1000);
+                return await img.screenshot({ captureBeyondViewport: true, type: 'png' })
+            }
 
+            await sleep(1000);
         }
         await page.screenshot({ captureBeyondViewport: true, path: `${RECORDINGS_PATH}/debug.png` })
         throw new Error('Failed to get verification image')
@@ -91,5 +94,8 @@ export const fillCaptchaAndJoin = async (page: Page, captcha: string, sessionId:
             .then(() => frame.click('[data-doi="CHAT:OPEN_CHAT_PANEL:MENU_CONTROL_BAR"]'))
             .catch(e => void (e))
 
-    return await startRecording(page, sessionId)
+    return {
+        isMeetingStopped: async () => !!(await frame.$('[aria-label="The meeting has ended."]')),
+        stop: await startRecording(page, sessionId)
+    }
 }

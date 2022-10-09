@@ -16,8 +16,6 @@ try {
     } catch (_) { }
     const displayProcess = spawn('Xvfb', [':1', '-screen', '0', `${WIDTH}x${HEIGHT}x16`], { stdio: 'inherit' })
     process.addListener('exit', () => {
-        console.log('before exit');
-
         displayProcess.kill(15)
         unlink('/tmp/.X1-lock')
     })

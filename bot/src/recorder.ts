@@ -2,6 +2,8 @@ import { spawn } from 'child_process';
 import { unlink } from 'fs/promises';
 import { Page } from "puppeteer";
 import { HEIGHT, RECORDINGS_PATH, WIDTH } from "./config";
+import { currentState, updateState } from './current-state';
+import { DISCORD } from './main';
 import { sleep } from './utils';
 
 export const startRecording = async (page: Page, sessionId: string) => {
@@ -11,8 +13,8 @@ export const startRecording = async (page: Page, sessionId: string) => {
     const VIDEO_PATH = `${RECORDINGS_PATH}/current-video-${sessionId}.mp4`;
     const AUDIO_PATH = `${RECORDINGS_PATH}/current-audio-${sessionId}.m4a`;
 
-    const audioRecording = spawn('ffmpeg', ['-f', 'pulse', '-i', 'auto_null.monitor', '-y', AUDIO_PATH], { stdio: 'ignore' })
-    const videoRecording = spawn('ffmpeg', ['-f', 'x11grab', '-framerate', '4', '-r', '4', '-video_size', `${WIDTH}x${HEIGHT}`, '-i', ':1.0', '-c:v', 'libx264', '-preset', 'superfast', '-pix_fmt', 'yuv420p', '-y', VIDEO_PATH], { stdio: 'ignore' })
+    const audioRecording = spawn('ffmpeg', ['-f', 'pulse', '-i', 'auto_null.monitor', '-y', AUDIO_PATH], {})
+    const videoRecording = spawn('ffmpeg', ['-f', 'x11grab', '-framerate', '4', '-r', '4', '-video_size', `${WIDTH}x${HEIGHT}`, '-i', ':1.0', '-c:v', 'libx264', '-preset', 'superfast', '-pix_fmt', 'yuv420p', '-y', VIDEO_PATH], {})
 
     return {
         stop: async (notifyWhenRecordingReact: (name: string) => void) => {
@@ -32,13 +34,9 @@ export const startRecording = async (page: Page, sessionId: string) => {
                 '-r', '4',
                 '-i', VIDEO_PATH,
                 '-i', AUDIO_PATH,
-                '-c:a copy',
-                '-ac', '1',
-                '-b:a', '48k',
-                '-ar', '44100',
                 '-c:v', 'libx265',
                 '-crf', '38',
-                FINAL_PATH, '-y',])
+                FINAL_PATH, '-y',], {})
 
             merger.once('close', async () => {
                 console.log('recording merged!', FINAL_PATH);
@@ -48,4 +46,29 @@ export const startRecording = async (page: Page, sessionId: string) => {
             })
         }
     }
+}
+
+export const stopRecording = async (done: (name: string) => void) => {
+    if (currentState.type !== 'recording-teams' && currentState.type !== 'recording-webex')
+        return
+
+    if (currentState.stopRecordingButtonId) {
+        const channel = await DISCORD.channels.fetch(currentState.stopRecordingButtonId[0])
+        if (channel?.isTextBased())
+            channel.messages.edit(currentState.stopRecordingButtonId[1], {
+                content: 'Scheduled recording started and then stopped',
+                components: [],
+            }).catch(e => void (e))
+    }
+
+    const stopCallback = currentState.stopRecordingCallback
+    updateState({
+        type: "idle",
+        stopRecordingCallback: () => { }
+    })
+
+
+    stopCallback(async name => {
+        done(name)
+    })
 }
