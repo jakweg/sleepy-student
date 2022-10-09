@@ -1,5 +1,7 @@
 import { spawn, spawnSync } from 'child_process';
 import { ActivityType } from 'discord.js';
+import { unlink } from 'fs/promises';
+import process from 'process';
 import { launch as launchBrowser } from './browser';
 import { HEIGHT, WIDTH } from './config';
 import { addStateListener, updateState } from './current-state';
@@ -8,7 +10,20 @@ import { initScheduler } from './scheduler';
 import { sleep } from './utils';
 
 try { spawnSync('pulseaudio', ['-D']) } catch (e) { void e }
-try { spawn('Xvfb', [':1', '-screen', '0', `${WIDTH}x${HEIGHT}x16`]) } catch (e) { void e }
+try {
+    try {
+        await unlink('/tmp/.X1-lock')
+    } catch (_) { }
+    const displayProcess = spawn('Xvfb', [':1', '-screen', '0', `${WIDTH}x${HEIGHT}x16`], { stdio: 'inherit' })
+    process.addListener('exit', () => {
+        console.log('before exit');
+
+        displayProcess.kill(15)
+        unlink('/tmp/.X1-lock')
+    })
+} catch (e) {
+}
+
 await sleep(500)
 
 const browser = await launchBrowser()
