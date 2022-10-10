@@ -97,7 +97,14 @@ export const fillCaptchaAndJoin = async (page: Page, captcha: string, sessionId:
     sleep(5000)
         .then(() => frame.waitForSelector('[data-doi="LAYOUT:GOT_IT:DIALOG_LAYOUT_FTE"]', { timeout: 5000 }))
         .then(() => frame.click('[data-doi="LAYOUT:GOT_IT:DIALOG_LAYOUT_FTE"]'))
+        .then(() => sleep(5000))
+        .then(() => frame.waitForSelector('[data-doi="LAYOUT:GOT_IT:DIALOG_LAYOUT_FTE"]', { timeout: 5000 }))
+        .then(() => frame.click('[data-doi="LAYOUT:GOT_IT:DIALOG_LAYOUT_FTE"]'))
         .catch(e => void (e))
+
+    sleep(10000)
+        .then(() => frame.waitForSelector('[aria-label*="close"]', { timeout: 5000 }))
+        .then(() => frame.click('[aria-label*="close"]'))
 
     if (currentState.type === 'joining-webex' && currentState.options?.showChat)
         frame.waitForSelector('[data-doi="CHAT:OPEN_CHAT_PANEL:MENU_CONTROL_BAR"]', { timeout: 5000 })
