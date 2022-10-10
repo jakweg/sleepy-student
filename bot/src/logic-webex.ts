@@ -105,6 +105,7 @@ export const fillCaptchaAndJoin = async (page: Page, captcha: string, sessionId:
     sleep(10000)
         .then(() => frame.waitForSelector('[aria-label*="close"]', { timeout: 5000 }))
         .then(() => frame.click('[aria-label*="close"]'))
+        .catch(e => void (e))
 
     if (currentState.type === 'joining-webex' && currentState.options?.showChat)
         frame.waitForSelector('[data-doi="CHAT:OPEN_CHAT_PANEL:MENU_CONTROL_BAR"]', { timeout: 5000 })
