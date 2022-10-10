@@ -9,7 +9,7 @@ import { launch as launchDiscord } from './discord-stuff';
 import { initScheduler } from './scheduler';
 import { sleep } from './utils';
 
-try { spawnSync('pulseaudio', ['-D']) } catch (e) { void e }
+try { spawnSync('pulseaudio', ['-D'], { stdio: 'ignore' }) } catch (e) { void e }
 try {
     try {
         await unlink('/tmp/.X1-lock')

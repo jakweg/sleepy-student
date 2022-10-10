@@ -93,6 +93,11 @@ export const fillCaptchaAndJoin = async (page: Page, captcha: string, sessionId:
         .then(() => frame.click('[title="Got it"]'))
         .catch(e => void (e))
 
+    sleep(6000)
+        .then(() => frame.waitForSelector('[title="Got it"]', { timeout: 10000 }))
+        .then(() => frame.click('[title="Got it"]'))
+        .catch(e => void (e))
+
 
     sleep(5000)
         .then(() => frame.waitForSelector('[data-doi="LAYOUT:GOT_IT:DIALOG_LAYOUT_FTE"]', { timeout: 5000 }))
