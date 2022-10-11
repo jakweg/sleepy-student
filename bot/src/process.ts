@@ -2,7 +2,7 @@ import { spawn as nodeSpawn } from 'child_process'
 const runningProcesses: Array<ReturnType<typeof nodeSpawn>> = []
 
 export const spawn = (cmd: ReadonlyArray<string>) => {
-    const process = nodeSpawn(cmd[0], cmd.slice(1), { stdio: 'inherit' })
+    const process = nodeSpawn(cmd[0], cmd.slice(1), { stdio: 'ignore' })
     runningProcesses.push(process)
 
     process.addListener('exit', () => {

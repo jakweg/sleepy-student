@@ -10,7 +10,7 @@ import { spawn } from './process';
 import { initScheduler } from './scheduler';
 import { sleep } from './utils';
 
-try { spawnSync('pulseaudio', ['-k'], { stdio: 'inherit' }) } catch (e) { void e }
+try { spawnSync('pulseaudio', ['-k'], { stdio: 'ignore' }) } catch (e) { void e }
 spawn(['pulseaudio'])
 
 try {
