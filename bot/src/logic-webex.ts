@@ -1,5 +1,5 @@
 import { Page } from "puppeteer"
-import { RECORDINGS_PATH, WEBEX_MAIL } from "./config"
+import { RECORDINGS_PATH, WEBEX_MAIL, WEBEX_NAME } from "./config"
 import { currentState } from "./current-state"
 import { startRecording } from './recorder'
 import { sleep } from "./utils"
@@ -51,7 +51,7 @@ export const fillCaptchaAndJoin = async (page: Page, captcha: string, sessionId:
     await page.focus('body')
     await sleep(1000)
     const [name, mail, characters] = results
-    for (const c of 'Andrzej') {
+    for (const c of WEBEX_NAME) {
         await sleep(Math.random() * 300 + 300)
         await name.type(c)
     }

@@ -10,6 +10,7 @@ export const WIDTH = parseInt(process.env.WIDTH!, 10) || 1280
 export const HEIGHT = parseInt(process.env.HEIGHT!, 10) || 720
 export const SCHEDULER_INTERVAL_MS = parseInt(process.env.SCHEDULER_INTERVAL_MS!, 10) || 60_000
 export const ALLOWED_CHANNELS = Object.freeze((process.env.ALLOWED_CHANNELS || '').split(',').map(e => e.trim()))
+export const WEBEX_NAME = process.env.WEBEX_NAME || 'Wojtek'
 export const WEBEX_MAIL = process.env.WEBEX_MAIL || ''
 export const RECORDING_READY_MESSAGE_FORMAT = process.env.RECORDING_READY_MESSAGE_FORMAT || 'Recording ready %name%'
 export const MS_TEAMS_CREDENTIALS_LOGIN = process.env.MS_TEAMS_CREDENTIALS_LOGIN
