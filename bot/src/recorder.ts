@@ -1,9 +1,9 @@
-import { spawn } from 'child_process';
 import { unlink } from 'fs/promises';
 import { Page } from "puppeteer";
 import { HEIGHT, RECORDINGS_PATH, WIDTH } from "./config";
 import { currentState, updateState } from './current-state';
 import { DISCORD } from './main';
+import { spawn } from './process';
 import { sleep } from './utils';
 
 export const startRecording = async (page: Page, sessionId: string) => {
@@ -13,9 +13,8 @@ export const startRecording = async (page: Page, sessionId: string) => {
     const VIDEO_PATH = `${RECORDINGS_PATH}/current-video-${sessionId}.mp4`;
     const AUDIO_PATH = `${RECORDINGS_PATH}/current-audio-${sessionId}.m4a`;
 
-    const stdio = 'ignore'
-    const audioRecording = spawn('ffmpeg', ['-f', 'pulse', '-i', 'auto_null.monitor', '-y', AUDIO_PATH], { stdio })
-    const videoRecording = spawn('ffmpeg', ['-f', 'x11grab', '-framerate', '4', '-r', '4', '-video_size', `${WIDTH}x${HEIGHT}`, '-i', ':1.0', '-c:v', 'libx264', '-preset', 'superfast', '-pix_fmt', 'yuv420p', '-y', VIDEO_PATH], { stdio })
+    const audioRecording = spawn(['ffmpeg', '-f', 'pulse', '-i', 'auto_null.monitor', '-y', AUDIO_PATH],)
+    const videoRecording = spawn(['ffmpeg', '-f', 'x11grab', '-framerate', '4', '-r', '4', '-video_size', `${WIDTH}x${HEIGHT}`, '-i', ':1.0', '-c:v', 'libx264', '-preset', 'superfast', '-pix_fmt', 'yuv420p', '-y', VIDEO_PATH],)
 
     return {
         stop: async (notifyWhenRecordingReact: (name: string) => void) => {
@@ -31,13 +30,13 @@ export const startRecording = async (page: Page, sessionId: string) => {
             const FINAL_PATH = `${RECORDINGS_PATH}/${name}`
 
             await sleep(1000);
-            const merger = spawn('ffmpeg', [
+            const merger = spawn(['ffmpeg',
                 '-r', '4',
                 '-i', VIDEO_PATH,
                 '-i', AUDIO_PATH,
                 '-c:v', 'libx264',
                 '-crf', '38',
-                FINAL_PATH, '-y',], { stdio })
+                FINAL_PATH, '-y',])
 
             merger.once('close', async () => {
                 console.log('recording merged!', FINAL_PATH);

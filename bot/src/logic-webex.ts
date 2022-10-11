@@ -39,7 +39,7 @@ export const createWebexSession = async (page: Page, url: string): Promise<{ cap
     return { captchaImage: buffer }
 }
 
-export const randomizeLettersCase = (text: string, upperProbability: number = 0.3) => {
+export const randomizeLettersCase = (text: string, upperProbability: number = 0.2) => {
     return text.split('').map(e => Math.random() < upperProbability ? e.toLocaleUpperCase() : e.toLocaleLowerCase()).join('')
 }
 
@@ -108,6 +108,11 @@ export const fillCaptchaAndJoin = async (page: Page, captcha: string, sessionId:
     sleep(6000)
         .then(() => frame.waitForSelector('[title="Got it"]', { timeout: 10000 }))
         .then(() => frame.click('[title="Got it"]'))
+        .catch(e => void (e))
+
+    sleep(7000)
+        .then(() => frame.waitForSelector('[data-doi="AUDIO:UNMUTE_SELF:MENU_CONTROL_BAR"]', { timeout: 10000 }))
+        .then(() => frame.click('[data-doi="AUDIO:UNMUTE_SELF:MENU_CONTROL_BAR"]'))
         .catch(e => void (e))
 
 
