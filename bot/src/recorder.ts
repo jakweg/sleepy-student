@@ -27,7 +27,7 @@ export const startRecording = async (page: Page, sessionId: string) => {
             audioRecording.kill(15)
             videoRecording.kill(15)
 
-            const name = `combined-${new Date().toJSON().replace(/\:/g, '-')}.mp4`
+            const name = `ready-${new Date().toJSON().replace(/\:/g, '-')}.mp4`
             const FINAL_PATH = `${RECORDINGS_PATH}/${name}`
 
             await sleep(1000);
@@ -35,7 +35,7 @@ export const startRecording = async (page: Page, sessionId: string) => {
                 '-r', '4',
                 '-i', VIDEO_PATH,
                 '-i', AUDIO_PATH,
-                '-c:v', 'libx265',
+                '-c:v', 'libx264',
                 '-crf', '38',
                 FINAL_PATH, '-y',], { stdio })
 
