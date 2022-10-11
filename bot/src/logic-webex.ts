@@ -39,6 +39,9 @@ export const createWebexSession = async (page: Page, url: string): Promise<{ cap
     return { captchaImage: buffer }
 }
 
+export const randomizeLettersCase = (text: string, upperProbability: number = 0.3) => {
+    return text.split('').map(e => Math.random() < upperProbability ? e.toLocaleUpperCase() : e.toLocaleLowerCase()).join('')
+}
 
 export const fillCaptchaAndJoin = async (page: Page, captcha: string, sessionId: string) => {
     let frameIndex = (await Promise.all(page.frames().map(e => e.$('#guest_next-btn')))).findIndex(e => e)
@@ -51,7 +54,7 @@ export const fillCaptchaAndJoin = async (page: Page, captcha: string, sessionId:
     await page.focus('body')
     await sleep(1000)
     const [name, mail, characters] = results
-    for (const c of WEBEX_NAME) {
+    for (const c of randomizeLettersCase(WEBEX_NAME)) {
         await sleep(Math.random() * 300 + 300)
         await name.type(c)
     }
