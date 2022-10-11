@@ -2,7 +2,7 @@ import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle } from 
 import { MAX_MEETING_DURATION_MINUTES, RECORDINGS_PATH, SCHEDULER_INTERVAL_MS } from "./config";
 import { assertActiveSession, currentState, updateState } from "./current-state";
 import { popFromThePast, ScheduledRecording } from "./db";
-import { publishRecordingReadyMessage } from "./discord-stuff";
+import { advanceWebexAndJoin, publishRecordingReadyMessage } from "./discord-stuff";
 import { startTeamsSession } from "./logic-teams";
 import { createWebexSession } from "./logic-webex";
 import { DISCORD } from "./main";
@@ -21,30 +21,40 @@ const startWebex = async (entry: ScheduledRecording) => {
     })
 
     const initialMessage = await channel.send({
-        content: `Hey <@${entry.scheduledBy}>! Joining webex for scheduled meeting ${entry.name || 'unnamed'} (\`${entry.id}\`), will need your help with captcha`,
+        content: `Hey <@${entry.scheduledBy}>! Joining webex for scheduled meeting ${entry.name || 'unnamed'} (\`${entry.id}\`), may need your help with captcha`,
     })
 
     try {
         const webex = await createWebexSession(currentState.page, currentState.options!.url)
 
         assertActiveSession(session)
-        updateState({
-            type: 'waiting-for-solution-for-webex-captcha',
-        })
 
-        const attachment = new AttachmentBuilder(webex.captchaImage);
+        if (webex.captchaImage !== 'not-needed') {
 
-        await initialMessage.reply({
-            content: 'Please anyone, help me with this!',
-            files: [attachment],
-            components: [new ActionRowBuilder()
-                .addComponents(
-                    new ButtonBuilder()
-                        .setCustomId(`solve-captcha-scheduled-button#${session}`)
-                        .setLabel(`I'm the hero today`)
-                        .setStyle(ButtonStyle.Primary),
-                ) as any],
-        });
+            updateState({
+                type: 'waiting-for-solution-for-webex-captcha',
+            })
+
+            const attachment = new AttachmentBuilder(webex.captchaImage);
+
+            await initialMessage.reply({
+                content: 'Please anyone, help me with this!',
+                files: [attachment],
+                components: [new ActionRowBuilder()
+                    .addComponents(
+                        new ButtonBuilder()
+                            .setCustomId(`solve-captcha-scheduled-button#${session}`)
+                            .setLabel(`I'm the hero today`)
+                            .setStyle(ButtonStyle.Primary),
+                    ) as any],
+            });
+        } else {
+            console.log('Captcha not needed with this webex meeting');
+
+            await advanceWebexAndJoin(session, null, async (options) => {
+                return [initialMessage.channelId, (await initialMessage.reply({ ...options } as any)).id]
+            })
+        }
     } catch (e) {
         console.error(e)
         initialMessage.reply({
@@ -122,7 +132,7 @@ const startTeams = async (entry: ScheduledRecording) => {
                 await stopRecording(publishRecordingReadyMessage(scheduled, null))
 
                 await initialMessage.reply({
-                    content: `Scheduled recording stopped after 90 minutes`,
+                    content: `Scheduled recording stopped after ${MAX_MEETING_DURATION_MINUTES} minutes`,
                 })
             } catch (e) { }
         },);

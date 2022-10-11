@@ -1,4 +1,4 @@
-import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, CacheType, ChatInputCommandInteraction, Client, Interaction, ModalBuilder, REST, Routes, SlashCommandBooleanOption, SlashCommandBuilder, SlashCommandStringOption, TextInputBuilder, TextInputStyle } from "discord.js";
+import { ActionRowBuilder, AttachmentBuilder, BaseMessageOptions, ButtonBuilder, ButtonInteraction, ButtonStyle, CacheType, ChatInputCommandInteraction, Client, Interaction, MessagePayload, ModalBuilder, REST, Routes, SlashCommandBooleanOption, SlashCommandBuilder, SlashCommandStringOption, TextInputBuilder, TextInputStyle } from "discord.js";
 import { ALLOWED_CHANNELS, LOCALE, MAX_MEETING_DURATION_MINUTES, MS_TEAMS_CREDENTIALS_LOGIN, MS_TEAMS_CREDENTIALS_PASSWORD, RECORDINGS_PATH, RECORDING_READY_MESSAGE_FORMAT } from "./config";
 import { assertActiveSession, currentState, updateState } from "./current-state";
 import { deleteById, findById, getAll, ScheduledRecording, scheduleNewRecording } from "./db";
@@ -14,24 +14,33 @@ const startWebex = async (sessionId: string, interaction: ChatInputCommandIntera
     const webex = await createWebexSession(currentState.page, currentState.options!.url)
 
     assertActiveSession(sessionId)
-    updateState({
-        type: 'waiting-for-solution-for-webex-captcha',
-    })
 
-    const attachment = new AttachmentBuilder(webex.captchaImage);
+    if (webex.captchaImage !== 'not-needed') {
+        updateState({
+            type: 'waiting-for-solution-for-webex-captcha',
+        })
 
-    await interaction.followUp({
-        content: 'Please solve this captcha',
-        files: [attachment],
-        components: [new ActionRowBuilder()
-            .addComponents(
-                new ButtonBuilder()
-                    .setCustomId(`solve-captcha-button#${sessionId}`)
-                    .setLabel(`I'm ready`)
-                    .setStyle(ButtonStyle.Primary),
-            ) as any],
-        ephemeral: true
-    });
+        const attachment = new AttachmentBuilder(webex.captchaImage);
+
+        await interaction.followUp({
+            content: 'Please solve this captcha',
+            files: [attachment],
+            components: [new ActionRowBuilder()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId(`solve-captcha-button#${sessionId}`)
+                        .setLabel(`I'm ready`)
+                        .setStyle(ButtonStyle.Primary),
+                ) as any],
+            ephemeral: true
+        });
+    } else {
+        console.log('Looks like captcha is not needed for this webex');
+
+        await advanceWebexAndJoin(sessionId, null, async (options) => {
+            return [interaction.channelId, (await interaction.followUp({ ephemeral: true, ...options } as any)).id]
+        })
+    }
 }
 
 const handleRequestWebexStart = async (interaction: ChatInputCommandInteraction<CacheType>) => {
@@ -132,84 +141,15 @@ const handleSolveButtonClicked = async (interaction: ButtonInteraction<CacheType
         type: 'joining-webex'
     })
 
-    const runningWebex = await fillCaptchaAndJoin(currentState.page, captcha, session)
-    assertActiveSession(session)
-
-    updateState({
-        type: 'recording-webex',
-        stopRecordingCallback: runningWebex.stop.stop,
+    await advanceWebexAndJoin(session, captcha, async (options) => {
+        if (isScheduled) {
+            const id = (await result.channel?.send(options) ?? null).id
+            if (id)
+                return [result.channelId, id]
+        }
+        else
+            return [interaction.channelId, (await result.followUp({ ephemeral: true, ...options } as any)).id]
     })
-
-
-    let messageId: string | null = null
-    if (isScheduled)
-        messageId = (await result.channel?.send({
-            content: `Scheduled recording \`${currentState.options?.scheduled?.name || 'unnamed'}\` started`,
-            components: [new ActionRowBuilder()
-                .addComponents(
-                    new ButtonBuilder()
-                        .setCustomId(`stop-recording#${session}`)
-                        .setLabel(`Stop`)
-                        .setStyle(ButtonStyle.Danger),
-                ) as any],
-        }))?.id ?? null
-    else
-        messageId = (await result.followUp({
-            ephemeral: !isScheduled,
-            content: 'Recording started',
-            components: [new ActionRowBuilder()
-                .addComponents(
-                    new ButtonBuilder()
-                        .setCustomId(`stop-recording#${session}`)
-                        .setLabel(`Stop`)
-                        .setStyle(ButtonStyle.Danger),
-                ) as any],
-        })).id
-
-    updateState({
-        stopRecordingButtonId: [result.channelId, messageId]
-    })
-
-    const scheduled = currentState.options?.scheduled
-
-    setTimeout(async () => {
-        try {
-            assertActiveSession(session)
-            await stopRecording(publishRecordingReadyMessage(scheduled, interaction))
-
-            if (isScheduled)
-                await result.channel?.send({
-                    content: `Scheduled recording stopped after 90 minutes`,
-                })
-            else
-                await result.followUp({
-                    ephemeral: !isScheduled,
-                    content: 'Recording stopped after 90 minutes',
-                })
-        } catch (e) { }
-    }, MAX_MEETING_DURATION_MINUTES * 60 * 1_000);
-
-    Promise.resolve()
-        .then(async () => {
-            while (true) {
-                assertActiveSession(session)
-                if (await runningWebex.isMeetingStopped()) {
-                    await stopRecording(publishRecordingReadyMessage(scheduled, interaction))
-
-                    if (isScheduled)
-                        await result.channel?.send({
-                            content: `Scheduled recording stopped because meeting is closed`,
-                        })
-                    else
-                        await result.followUp({
-                            ephemeral: !isScheduled,
-                            content: 'Recording stopped because meeting is closed',
-                        })
-                }
-                await sleep(1000)
-            }
-        })
-        .catch(e => void (e))
 }
 
 export const publishRecordingReadyMessage = (scheduled: ScheduledRecording, interaction: null | ButtonInteraction | ChatInputCommandInteraction) => async (name: string) => {
@@ -427,7 +367,7 @@ const handleRequestTeamsStart = async (interaction: ChatInputCommandInteraction<
                 await stopRecording(publishRecordingReadyMessage(scheduled, null))
 
                 await interaction.reply({
-                    content: `Scheduled recording stopped after 90 minutes`,
+                    content: `Scheduled recording stopped after ${MAX_MEETING_DURATION_MINUTES} minutes`,
                 })
             } catch (e) { }
         },);
@@ -616,5 +556,67 @@ export const launch = async () => {
     });
 
     return client
+}
+
+export async function advanceWebexAndJoin(session: string,
+    captcha: string,
+    postMessage: (options: MessagePayload | BaseMessageOptions) => Promise<[string, string]>) {
+
+    const runningWebex = await fillCaptchaAndJoin(currentState.page, captcha, session)
+    assertActiveSession(session)
+
+    updateState({
+        type: 'recording-webex',
+        stopRecordingCallback: runningWebex.stop.stop,
+    })
+
+
+    const stopRecordingButtonId = await postMessage({
+        content: `Recording \`${currentState.options?.scheduled?.name || 'unnamed'}\` started`,
+        components: [new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId(`stop-recording#${session}`)
+                    .setLabel(`Stop`)
+                    .setStyle(ButtonStyle.Danger),
+            ) as any],
+    }) ?? null
+
+    updateState({
+        stopRecordingButtonId
+    })
+
+    const scheduled = currentState.options?.scheduled
+
+    setTimeout(async () => {
+        try {
+            assertActiveSession(session)
+            await stopRecording((name) => {
+                postMessage({ content: RECORDING_READY_MESSAGE_FORMAT.replace('%name%', name), })
+            })
+
+            postMessage({
+                content: `Recording stopped after ${MAX_MEETING_DURATION_MINUTES} minutes`,
+            })
+        } catch (e) { }
+    }, MAX_MEETING_DURATION_MINUTES * 60 * 1_000);
+
+    Promise.resolve()
+        .then(async () => {
+            while (true) {
+                assertActiveSession(session)
+                if (await runningWebex.isMeetingStopped()) {
+                    await stopRecording((name) => {
+                        postMessage({ content: RECORDING_READY_MESSAGE_FORMAT.replace('%name%', name), })
+                    })
+
+                    postMessage({
+                        content: `Recording stopped because meeting is closed`,
+                    })
+                }
+                await sleep(1000)
+            }
+        })
+        .catch(e => void (e))
 }
 

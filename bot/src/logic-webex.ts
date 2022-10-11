@@ -4,7 +4,8 @@ import { currentState } from "./current-state"
 import { startRecording } from './recorder'
 import { sleep } from "./utils"
 
-export const createWebexSession = async (page: Page, url: string) => {
+export const createWebexSession = async (page: Page, url: string): Promise<{ captchaImage: Buffer | 'not-needed' }> => {
+    url = url.replace('launchApp=true', '')
     await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36')
     await page.browserContext().overridePermissions(url, ['microphone', 'camera'])
     await page.goto(url, { waitUntil: 'domcontentloaded' })
@@ -15,13 +16,17 @@ export const createWebexSession = async (page: Page, url: string) => {
     } catch (e) {
     }
 
-    const getCaptchaImage = async () => {
+    const getCaptchaImage = async (): Promise<Buffer | 'not-needed'> => {
         for (let i = 0; i < 10; ++i) {
             const img = (await Promise.all((page.frames()).map(e => e.$('#verificationImage')))).find(e => e)
             if (img) {
                 await sleep(1000);
-                return await img.screenshot({ captureBeyondViewport: true, type: 'png' })
+                return await img.screenshot({ captureBeyondViewport: true, type: 'png' }) as Buffer
             }
+
+            const nameInput = (await Promise.all((page.frames()).map(e => e.$('[placeholder="Email address"]')))).find(e => e)
+            if (nameInput)
+                return 'not-needed'
 
             await sleep(1000);
         }
@@ -56,12 +61,14 @@ export const fillCaptchaAndJoin = async (page: Page, captcha: string, sessionId:
         await sleep(Math.random() * 300 + 300)
         await mail.type(c)
     }
-    await sleep(Math.random() * 500 + 500)
-    for (const c of captcha) {
-        await sleep(Math.random() * 300 + 300)
-        await characters.type(c)
+    if (characters && captcha) {
+        await sleep(Math.random() * 500 + 500)
+        for (const c of captcha) {
+            await sleep(Math.random() * 300 + 300)
+            await characters.type(c)
+        }
     }
-    await sleep(500)
+    await sleep(300)
     await frame.click('#guest_next-btn')
 
     for (let i = 0; i < 20; ++i) {
@@ -72,7 +79,6 @@ export const fillCaptchaAndJoin = async (page: Page, captcha: string, sessionId:
     }
     if (!frame) throw new Error('missing join button')
     await sleep(1000)
-    try { await frame.click('[data-doi="AUDIO:MUTE_SELF:MEETSIMPLE_INTERSTITIAL"]'); await sleep(500) } catch (e) { }
     try { await frame.click('[data-doi="VIDEO:STOP_VIDEO:MEETSIMPLE_INTERSTITIAL"]'); await sleep(500) } catch (e) { }
     await frame.click('[data-doi="MEETING:JOIN_MEETING:MEETSIMPLE_INTERSTITIAL"]'); await sleep(500)
     try { await frame.click('[data-doi="VIDEO:JOIN_MEETING:MEETSIMPLE_INTERSTITIAL"]'); } catch (e) { }
@@ -88,6 +94,9 @@ export const fillCaptchaAndJoin = async (page: Page, captcha: string, sessionId:
     }
 
     await waitToBeJoined()
+
+    try { await frame.click('[data-doi="AUDIO:MUTE_SELF:MEETSIMPLE_INTERSTITIAL"]'); } catch (e) { }
+    try { await frame.click('[data-doi="AUDIO:UNMUTE_SELF:MENU_CONTROL_BAR"]'); } catch (e) { }
 
     frame.waitForSelector('[title="Got it"]', { timeout: 5000 })
         .then(() => frame.click('[title="Got it"]'))
