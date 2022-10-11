@@ -109,10 +109,13 @@ export const fillCaptchaAndJoin = async (page: Page, captcha: string, sessionId:
 
 
     sleep(5000)
-        .then(() => frame.waitForSelector('[data-doi="LAYOUT:GOT_IT:DIALOG_LAYOUT_FTE"]', { timeout: 5000 }))
+        .then(() => frame.waitForSelector('[data-doi="LAYOUT:GOT_IT:DIALOG_LAYOUT_FTE"]', { timeout: 0 }))
         .then(() => frame.click('[data-doi="LAYOUT:GOT_IT:DIALOG_LAYOUT_FTE"]'))
         .then(() => sleep(5000))
-        .then(() => frame.waitForSelector('[data-doi="LAYOUT:GOT_IT:DIALOG_LAYOUT_FTE"]', { timeout: 5000 }))
+        .then(() => frame.waitForSelector('[data-doi="LAYOUT:GOT_IT:DIALOG_LAYOUT_FTE"]', { timeout: 0 }))
+        .then(() => frame.click('[data-doi="LAYOUT:GOT_IT:DIALOG_LAYOUT_FTE"]'))
+        .then(() => sleep(5000))
+        .then(() => frame.waitForSelector('[data-doi="LAYOUT:GOT_IT:DIALOG_LAYOUT_FTE"]', { timeout: 0 }))
         .then(() => frame.click('[data-doi="LAYOUT:GOT_IT:DIALOG_LAYOUT_FTE"]'))
         .catch(e => void (e))
 
