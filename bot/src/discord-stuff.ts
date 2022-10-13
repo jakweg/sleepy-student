@@ -83,6 +83,13 @@ const handleRequestWebexStart = async (interaction: ChatInputCommandInteraction<
 }
 
 const handleSolveButtonClicked = async (interaction: ButtonInteraction<CacheType>, session: string, isScheduled: boolean) => {
+    if (session && session !== currentState.options?.sessionId) {
+        await interaction.reply({
+            content: `You should have not clicked this button`,
+            ephemeral: true,
+        })
+        return
+    }
     if (!session || currentState.type !== 'waiting-for-solution-for-webex-captcha') {
         await interaction.reply({
             content: `Sorry, but I'm busy now`,
@@ -112,6 +119,12 @@ const handleSolveButtonClicked = async (interaction: ButtonInteraction<CacheType
     const result = await interaction.awaitModalSubmit({ time: 0 });
 
     const captcha = result.fields.getTextInputValue('captcha-result')
+    if (!captcha) {
+        interaction.reply({
+            content: `What?`,
+            ephemeral: true,
+        }).catch(e => void (e))
+    }
 
     if (isScheduled)
         await interaction.message.delete().catch(e => void (e))
@@ -136,6 +149,9 @@ const handleSolveButtonClicked = async (interaction: ButtonInteraction<CacheType
             ephemeral: true,
             content: 'Thanks!',
         })?.catch(e => void (e))
+
+    if (currentState.type !== 'waiting-for-solution-for-webex-captcha')
+        return
 
     updateState({
         type: 'joining-webex'
