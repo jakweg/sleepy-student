@@ -32,7 +32,7 @@ export const DISCORD = await launchDiscord()
 
 addStateListener(state => {
     if (state.type === 'recording-webex' || state.type === 'recording-teams')
-        DISCORD.user?.setActivity({ name: 'Recording session for You', type: ActivityType.Watching })
+        DISCORD.user?.setActivity({ name: 'session for You', type: ActivityType.Watching })
     else
         DISCORD.user?.setActivity(undefined)
 })

@@ -114,7 +114,7 @@ const handleSolveButtonClicked = async (interaction: ButtonInteraction<CacheType
     const captcha = result.fields.getTextInputValue('captcha-result')
 
     if (isScheduled)
-        await interaction.message.delete()
+        await interaction.message.delete().catch(e => void (e))
     try { assertActiveSession(session) }
     catch (_) {
         interaction.reply({
@@ -126,7 +126,7 @@ const handleSolveButtonClicked = async (interaction: ButtonInteraction<CacheType
 
 
     if (isScheduled) {
-        result.reply({ ephemeral: true, content: 'Thanks, it really means a lot for me' })
+        result.reply({ ephemeral: true, content: 'Thanks, it really means a lot for me' })?.catch(e => void (e))
         result.channel?.send({
             content: `Thank you <@${interaction.user.id}> :heart: You are truly my hero of the day`,
         })
@@ -135,7 +135,7 @@ const handleSolveButtonClicked = async (interaction: ButtonInteraction<CacheType
         result.reply({
             ephemeral: true,
             content: 'Thanks!',
-        })
+        })?.catch(e => void (e))
 
     updateState({
         type: 'joining-webex'
@@ -191,12 +191,12 @@ const handleStopRecordingClicked = async (interaction: ButtonInteraction | ChatI
     if (scheduled)
         await interaction.channel?.send({
             content: `Recording of ${scheduled.name || 'unnamed session'} stopped by <@${interaction.user.id}>`,
-        })
+        })?.catch(e => void (e))
 
     await interaction.reply({
         content: `Stopped recording by your command`,
         ephemeral: true,
-    })
+    })?.catch(e => void (e))
 
     stopRecording(publishRecordingReadyMessage(scheduled, interaction))
 }
@@ -368,7 +368,7 @@ const handleRequestTeamsStart = async (interaction: ChatInputCommandInteraction<
 
                 await interaction.reply({
                     content: `Scheduled recording stopped after ${MAX_MEETING_DURATION_MINUTES} minutes`,
-                })
+                })?.catch(e => void (e))
             } catch (e) { }
         },);
 }
@@ -595,7 +595,7 @@ export async function advanceWebexAndJoin(session: string,
                 postMessage({ content: RECORDING_READY_MESSAGE_FORMAT.replace('%name%', name), })
             })
 
-            postMessage({
+            await postMessage({
                 content: `Recording stopped after ${MAX_MEETING_DURATION_MINUTES} minutes`,
             })
         } catch (e) { }
@@ -610,7 +610,7 @@ export async function advanceWebexAndJoin(session: string,
                         postMessage({ content: RECORDING_READY_MESSAGE_FORMAT.replace('%name%', name), })
                     })
 
-                    postMessage({
+                    await postMessage({
                         content: `Recording stopped because meeting is closed`,
                     })
                 }
