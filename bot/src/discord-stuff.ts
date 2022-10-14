@@ -513,8 +513,8 @@ const handleInteraction = async (interaction: Interaction<CacheType>) => {
 const createCommands = () => {
     return [
         new SlashCommandBuilder()
-            .setName('schedule')
-            .setDescription('Record session in the future')
+            .setName('record')
+            .setDescription('Record session')
             .addStringOption(new SlashCommandStringOption()
                 .setName('link')
                 .setDescription('Link to join')
