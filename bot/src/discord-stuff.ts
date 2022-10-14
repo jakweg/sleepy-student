@@ -494,6 +494,7 @@ const handleInteraction = async (interaction: Interaction<CacheType>) => {
             case 'ss': await handleScreenshotRequest(interaction); break
             case 'schedule': await handleScheduleRequest(interaction); break
             case 'details': await handleDetailsRequest(interaction); break
+            case 'upcoming': await handleNextRecordingsRequest(interaction); break
         }
     } else if (interaction.isButton()) {
         const [customId, session] = interaction.customId.split('#')
