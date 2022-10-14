@@ -43,14 +43,16 @@ const saveDb = async () => {
     await writeFile(DB_PATH, JSON.stringify(instance, undefined, 1), { encoding: 'utf8' })
 }
 
+const getRandomId = () => (Math.random() * 0xFFFF | 0).toString(16).padStart(2, '0')
+
 export const scheduleNewRecording = async (data: Omit<ScheduledRecording, 'id'>): Promise<ScheduledRecording> => {
     if (data.timestamp < Date.now())
         throw new Error(`Attempt to schedule recording in the past`)
 
-    const id = (Math.random() * 0xFFFFFF | 0).toString(16).padStart(6, '0')
-
-    if (instance.scheduledRecordings[id] !== undefined)
-        return scheduleNewRecording(data)
+    let id: string
+    do {
+        id = getRandomId()
+    } while (instance.scheduledRecordings[id] !== undefined);
 
     instance.scheduledRecordings[id] = { ...data }
     await saveDb()
