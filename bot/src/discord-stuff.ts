@@ -138,6 +138,8 @@ const handleSolveButtonClicked = async (interaction: ButtonInteraction<CacheType
     }
 
 
+    if (currentState.type !== 'waiting-for-solution-for-webex-captcha')
+        return
     if (isScheduled) {
         result.reply({ ephemeral: true, content: 'Thanks, it really means a lot for me' })?.catch(e => void (e))
         result.channel?.send({
@@ -356,7 +358,7 @@ const handleRequestTeamsStart = async (interaction: ChatInputCommandInteraction<
     }
     assertActiveSession(session)
 
-    const recording = await startRecording(page, session)
+    const recording = await startRecording(page, session, `unnamed-teams-${new Date().toJSON()}`)
 
     updateState({
         type: 'recording-teams',
@@ -593,7 +595,9 @@ export async function advanceWebexAndJoin(session: string,
     captcha: string,
     postMessage: (options: MessagePayload | BaseMessageOptions) => Promise<[string, string]>) {
 
-    const runningWebex = await fillCaptchaAndJoin(currentState.page, captcha, session)
+
+    const runningWebex = await fillCaptchaAndJoin(currentState.page, captcha, session,
+        currentState.options?.scheduled?.name ? currentState.options?.scheduled?.name : `unnamed-webex-${new Date().toJSON()}`)
     assertActiveSession(session)
 
     updateState({

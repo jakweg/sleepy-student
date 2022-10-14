@@ -25,7 +25,7 @@ const startWebex = async (entry: ScheduledRecording) => {
         components: [new ActionRowBuilder()
             .addComponents(new ButtonBuilder()
                 .setURL(entry.url)
-                .setLabel(`Enter yourself`)
+                .setLabel(`Enter the meeting yourself`)
                 .setStyle(ButtonStyle.Link)) as any
         ],
     })
@@ -95,7 +95,7 @@ const startTeams = async (entry: ScheduledRecording) => {
         components: [new ActionRowBuilder()
             .addComponents(new ButtonBuilder()
                 .setURL(entry.url)
-                .setLabel(`Enter yourself`)
+                .setLabel(`Enter the meeting yourself`)
                 .setStyle(ButtonStyle.Link)) as any
         ],
     })
@@ -118,7 +118,7 @@ const startTeams = async (entry: ScheduledRecording) => {
     }
     assertActiveSession(session)
 
-    const recording = await startRecording(page, session)
+    const recording = await startRecording(page, session, currentState.options?.scheduled?.name || `unnamed-teams-${new Date().toJSON()}`)
 
     updateState({
         type: 'recording-teams',

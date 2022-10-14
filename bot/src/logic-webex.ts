@@ -43,7 +43,7 @@ export const randomizeLettersCase = (text: string, upperProbability: number = 0.
     return text.split('').map(e => Math.random() < upperProbability ? e.toLocaleUpperCase() : e.toLocaleLowerCase()).join('')
 }
 
-export const fillCaptchaAndJoin = async (page: Page, captcha: string, sessionId: string) => {
+export const fillCaptchaAndJoin = async (page: Page, captcha: string, sessionId: string, suggestedSaveName: string) => {
     let frameIndex = (await Promise.all(page.frames().map(e => e.$('#guest_next-btn')))).findIndex(e => e)
     let frame = page.frames()[frameIndex]
     if (!frame) throw new Error('missing inputs frame')
@@ -140,6 +140,6 @@ export const fillCaptchaAndJoin = async (page: Page, captcha: string, sessionId:
 
     return {
         isMeetingStopped: async () => !!(await frame.$('[aria-label="The meeting has ended."]')),
-        stop: await startRecording(page, sessionId)
+        stop: await startRecording(page, sessionId, suggestedSaveName)
     }
 }
