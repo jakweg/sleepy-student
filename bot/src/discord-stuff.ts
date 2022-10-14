@@ -172,6 +172,7 @@ const handleSolveButtonClicked = async (interaction: ButtonInteraction<CacheType
 
 export const publishRecordingReadyMessage = (scheduled: ScheduledRecording, interaction: null | ButtonInteraction | ChatInputCommandInteraction) => async (name: string) => {
     try {
+        name = encodeURIComponent(name)
         if (scheduled) {
             const channel = await DISCORD.channels.fetch(scheduled.channel)
             if (channel?.isTextBased()) {
@@ -495,7 +496,7 @@ const handleInteraction = async (interaction: Interaction<CacheType>) => {
             case 'webex': await handleRequestWebexStart(interaction); break
             case 'teams': await handleRequestTeamsStart(interaction); break
             case 'ss': await handleScreenshotRequest(interaction); break
-            case 'schedule': await handleScheduleRequest(interaction); break
+            case 'record': await handleScheduleRequest(interaction); break
             case 'details': await handleDetailsRequest(interaction); break
             case 'upcoming': await handleNextRecordingsRequest(interaction); break
         }
@@ -628,7 +629,7 @@ export async function advanceWebexAndJoin(session: string,
         try {
             assertActiveSession(session)
             await stopRecording((name) => {
-                postMessage({ content: RECORDING_READY_MESSAGE_FORMAT.replace('%name%', name), })
+                postMessage({ content: RECORDING_READY_MESSAGE_FORMAT.replace('%name%', encodeURIComponent(name)), })
             })
 
             await postMessage({
@@ -643,7 +644,7 @@ export async function advanceWebexAndJoin(session: string,
                 assertActiveSession(session)
                 if (await runningWebex.isMeetingStopped()) {
                     await stopRecording((name) => {
-                        postMessage({ content: RECORDING_READY_MESSAGE_FORMAT.replace('%name%', name), })
+                        postMessage({ content: RECORDING_READY_MESSAGE_FORMAT.replace('%name%', encodeURIComponent(name)), })
                     })
 
                     await postMessage({
