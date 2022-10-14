@@ -1,4 +1,4 @@
-import { ActionRowBuilder, AttachmentBuilder, AutocompleteInteraction, BaseMessageOptions, ButtonBuilder, ButtonInteraction, ButtonStyle, CacheType, ChatInputCommandInteraction, Client, Interaction, MessagePayload, ModalBuilder, REST, Routes, SlashCommandBooleanOption, SlashCommandBuilder, SlashCommandStringOption, TextInputBuilder, TextInputStyle } from "discord.js";
+import { ActionRowBuilder, AttachmentBuilder, AutocompleteInteraction, BaseMessageOptions, ButtonBuilder, ButtonInteraction, ButtonStyle, CacheType, ChatInputCommandInteraction, Client, Interaction, MessagePayload, ModalBuilder, REST, Routes, SlashCommandBuilder, SlashCommandStringOption, TextInputBuilder, TextInputStyle } from "discord.js";
 import { ALLOWED_CHANNELS, LOCALE, MAX_MEETING_DURATION_MINUTES, MS_TEAMS_CREDENTIALS_LOGIN, MS_TEAMS_CREDENTIALS_PASSWORD, RECORDINGS_PATH, RECORDING_READY_MESSAGE_FORMAT } from "./config";
 import { assertActiveSession, currentState, updateState } from "./current-state";
 import { deleteById, findById, getAll, ScheduledRecording, scheduleNewRecording } from "./db";
@@ -531,24 +531,24 @@ const createCommands = () => {
         new SlashCommandBuilder()
             .setName('stop')
             .setDescription('Immediately stop current recording'),
-        new SlashCommandBuilder()
-            .setName('webex')
-            .setDescription('Record webex session now')
-            .addStringOption(new SlashCommandStringOption()
-                .setName('link')
-                .setDescription('Link to meeting')
-                .setRequired(true))
-            .addBooleanOption(new SlashCommandBooleanOption()
-                .setName('show-chat')
-                .setDescription('Show chat in the recording')
-                .setRequired(false)),
-        new SlashCommandBuilder()
-            .setName('teams')
-            .setDescription('Record ms teams session now')
-            .addStringOption(new SlashCommandStringOption()
-                .setName('link')
-                .setDescription('Link to channel or meeting')
-                .setRequired(true)),
+        // new SlashCommandBuilder()
+        //     .setName('webex')
+        //     .setDescription('Record webex session now')
+        //     .addStringOption(new SlashCommandStringOption()
+        //         .setName('link')
+        //         .setDescription('Link to meeting')
+        //         .setRequired(true))
+        //     .addBooleanOption(new SlashCommandBooleanOption()
+        //         .setName('show-chat')
+        //         .setDescription('Show chat in the recording')
+        //         .setRequired(false)),
+        // new SlashCommandBuilder()
+        //     .setName('teams')
+        //     .setDescription('Record ms teams session now')
+        //     .addStringOption(new SlashCommandStringOption()
+        //         .setName('link')
+        //         .setDescription('Link to channel or meeting')
+        //         .setRequired(true)),
         new SlashCommandBuilder()
             .setName('upcoming')
             .setDescription('View upcoming scheduled recordings'),
