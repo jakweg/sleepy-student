@@ -11,7 +11,7 @@ import { initScheduler } from './scheduler';
 import { sleep } from './utils';
 
 try { spawnSync('pulseaudio', ['-k'], { stdio: 'ignore' }) } catch (e) { void e }
-spawn(['pulseaudio'])
+spawn(['pulseaudio', '-D'])
 
 try {
     try {

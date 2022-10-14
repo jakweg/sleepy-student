@@ -54,16 +54,22 @@ export const fillCaptchaAndJoin = async (page: Page, captcha: string, sessionId:
     await page.focus('body')
     await sleep(1000)
     const [name, mail, characters] = results
+    await name.evaluate(element => (element as any).value = '')
     for (const c of randomizeLettersCase(WEBEX_NAME)) {
         await sleep(Math.random() * 300 + 300)
         await name.type(c)
     }
 
     await sleep(Math.random() * 500 + 500)
+    await mail.evaluate(element => (element as any).value = '')
+    await mail.click({ clickCount: 3 });
+    await mail.press('Backspace');
+
     for (const c of WEBEX_MAIL) {
         await sleep(Math.random() * 300 + 300)
         await mail.type(c)
     }
+
     if (characters && captcha) {
         await sleep(Math.random() * 500 + 500)
         for (const c of captcha) {
