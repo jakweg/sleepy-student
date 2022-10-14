@@ -238,7 +238,8 @@ const handleScheduleRequest = async (interaction: ChatInputCommandInteraction<Ca
 
     const url = interaction.options.getString('link')
     const name = interaction.options.getString('name', false)?.replace(/@/g, '') ?? null
-    const date = new Date(interaction.options.getString('when') ?? '')
+    const whenString = interaction.options.getString('when') ?? ''
+    const date = new Date(whenString === 'now' ? (Date.now() + 1_100) : whenString)
 
     if (isNaN(date.getTime())) {
         await interaction.followUp({
@@ -520,7 +521,7 @@ const createCommands = () => {
                 .setRequired(true))
             .addStringOption(new SlashCommandStringOption()
                 .setName('when')
-                .setDescription('When to join yyyy.MM.dd hh:mm:ss')
+                .setDescription('When to join yyyy.MM.dd hh:mm:ss or "now"')
                 .setRequired(true))
             .addStringOption(new SlashCommandStringOption()
                 .setName('name')
