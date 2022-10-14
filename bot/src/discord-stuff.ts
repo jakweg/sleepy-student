@@ -1,4 +1,4 @@
-import { ActionRowBuilder, AttachmentBuilder, BaseMessageOptions, ButtonBuilder, ButtonInteraction, ButtonStyle, CacheType, ChatInputCommandInteraction, Client, Interaction, MessagePayload, ModalBuilder, REST, Routes, SlashCommandBooleanOption, SlashCommandBuilder, SlashCommandStringOption, TextInputBuilder, TextInputStyle } from "discord.js";
+import { ActionRowBuilder, AttachmentBuilder, AutocompleteInteraction, BaseMessageOptions, ButtonBuilder, ButtonInteraction, ButtonStyle, CacheType, ChatInputCommandInteraction, Client, Interaction, MessagePayload, ModalBuilder, REST, Routes, SlashCommandBooleanOption, SlashCommandBuilder, SlashCommandStringOption, TextInputBuilder, TextInputStyle } from "discord.js";
 import { ALLOWED_CHANNELS, LOCALE, MAX_MEETING_DURATION_MINUTES, MS_TEAMS_CREDENTIALS_LOGIN, MS_TEAMS_CREDENTIALS_PASSWORD, RECORDINGS_PATH, RECORDING_READY_MESSAGE_FORMAT } from "./config";
 import { assertActiveSession, currentState, updateState } from "./current-state";
 import { deleteById, findById, getAll, ScheduledRecording, scheduleNewRecording } from "./db";
@@ -53,7 +53,7 @@ const handleRequestWebexStart = async (interaction: ChatInputCommandInteraction<
     }
 
     const session = `${Date.now()}`
-    const url = interaction.options.getString('url')!
+    const url = interaction.options.getString('link')!
     const showChat = !!interaction.options.getBoolean('show-chat')
 
     updateState({
@@ -234,9 +234,9 @@ const handleScreenshotRequest = async (interaction: ChatInputCommandInteraction<
 const handleScheduleRequest = async (interaction: ChatInputCommandInteraction<CacheType>) => {
     await interaction.deferReply({ ephemeral: true })
 
-    const url = interaction.options.getString('url')
+    const url = interaction.options.getString('link')
     const name = interaction.options.getString('name', false)?.replace(/@/g, '') ?? null
-    const date = new Date(interaction.options.getString('date') ?? '')
+    const date = new Date(interaction.options.getString('when') ?? '')
 
     if (isNaN(date.getTime())) {
         await interaction.followUp({
@@ -321,7 +321,7 @@ const handleRequestTeamsStart = async (interaction: ChatInputCommandInteraction<
     }
 
     const page = currentState.page
-    const url = interaction.options.getString('url')!
+    const url = interaction.options.getString('link')!
 
     const session = `${Date.now()}`
     updateState({
@@ -406,13 +406,22 @@ const handleDeleteScheduledClicked = async (interaction: ButtonInteraction<Cache
 }
 
 const handleNextRecordingsRequest = async (interaction: ChatInputCommandInteraction<CacheType>) => {
-    const detailsString = getAll().map(e => `\`${e.id}\` ${e.name || 'unnamed'} (${e.type}) \`${new Date(e.timestamp).toLocaleString(LOCALE)}\` `)
 
-    await interaction.reply({
-        content: `Scheduled recordings (${detailsString.length}):\n${detailsString.join('\n')}`,
-        allowedMentions: { users: [], parse: [] },
-        ephemeral: true
-    });
+    const all = getAll();
+    if (all.length > 0) {
+        const detailsString = all.map(e => `\`${e.id}\` ${e.name || 'unnamed'} (${e.type}) \`${new Date(e.timestamp).toLocaleString(LOCALE)}\` `)
+
+        await interaction.reply({
+            content: `Scheduled recordings: (${detailsString.length})\n${detailsString.join('\n')}`,
+            allowedMentions: { users: [], parse: [] },
+            ephemeral: true
+        });
+    } else {
+        await interaction.reply({
+            content: `No upcoming recordings`,
+            ephemeral: true
+        });
+    }
 }
 
 const handleDetailsRequest = async (interaction: ChatInputCommandInteraction<CacheType>) => {
@@ -429,11 +438,10 @@ const handleDetailsRequest = async (interaction: ChatInputCommandInteraction<Cac
 
     await interaction.reply({
         content: `Meeting details:
-ID: ${entry.id}
 Name: ${entry.name || 'unnamed'}
 Date: ${new Date(entry.timestamp).toLocaleString(LOCALE)}
 Link: \`${entry.url}\`
-Scheduled by <@${entry.scheduledBy}> in <#${entry.channel}>
+Scheduled by <@${entry.scheduledBy}> in <#${entry.channel}> on ${new Date(entry.creationTimestamp).toLocaleString(LOCALE)}
 `,
         components: [new ActionRowBuilder()
             .addComponents(
@@ -443,7 +451,7 @@ Scheduled by <@${entry.scheduledBy}> in <#${entry.channel}>
                     .setStyle(ButtonStyle.Danger),
                 new ButtonBuilder()
                     .setURL(entry.url)
-                    .setLabel(`Enter meeting`)
+                    .setLabel(`Enter meeting yourself`)
                     .setStyle(ButtonStyle.Link),
             ) as any],
         allowedMentions: { users: [] },
@@ -451,44 +459,49 @@ Scheduled by <@${entry.scheduledBy}> in <#${entry.channel}>
     })
 }
 
+const handleDetailsAutocomplete = (interaction: AutocompleteInteraction) => {
+    const { name, value } = interaction.options.getFocused(true);
+
+    interaction
+        .respond(getAll()
+            .filter(e => e.id.startsWith(value) || e.name.toLocaleLowerCase().includes(name.toLocaleLowerCase()))
+            .map(e => ({ name: e.name, value: e.id })))
+        .catch(e => void (e))
+}
+
 const handleInteraction = async (interaction: Interaction<CacheType>) => {
     if (!ALLOWED_CHANNELS.includes(interaction.channelId!)) {
-        console.warn('Not permitted invocation in channel', interaction.channelId);
+        console.warn('Not permitted invocation in channel', interaction.channelId, 'by', interaction.user?.username, interaction.user?.id);
         if (interaction.isRepliable())
             interaction.reply({ content: `This channel (${interaction.channelId}) is not allowed to use this bot`, ephemeral: true })
         return
     }
 
-    console.log(`Invoked ${interaction.toString()} by ${interaction.user.username} (${interaction.user.id}) in ${interaction.channelId}`)
+    console.log(`Invoked ${interaction.type} ${interaction.toString()} by ${interaction.user.username} (${interaction.user.id}) in ${interaction.channelId}`)
 
-    if (interaction.isChatInputCommand()) {
+    if (interaction.isAutocomplete()) {
+        switch (interaction.commandName) {
+            case 'details': handleDetailsAutocomplete(interaction); break
+        }
+
+    } else if (interaction.isChatInputCommand()) {
         const { commandName } = interaction;
 
-        if (commandName === 'stop') {
-            handleStopRecordingClicked(interaction, null)
-        } else if (commandName === 'webex') {
-            await handleRequestWebexStart(interaction)
-        } else if (commandName === 'teams') {
-            await handleRequestTeamsStart(interaction)
-        } else if (commandName === 'ss') {
-            await handleScreenshotRequest(interaction)
-        } else if (commandName === 'schedule') {
-            await handleScheduleRequest(interaction)
-        } else if (commandName === 'next-recordings') {
-            await handleNextRecordingsRequest(interaction)
-        } else if (commandName === 'scheduled-details') {
-            await handleDetailsRequest(interaction)
+        switch (commandName) {
+            case 'stop': handleStopRecordingClicked(interaction, null); break
+            case 'webex': await handleRequestWebexStart(interaction); break
+            case 'teams': await handleRequestTeamsStart(interaction); break
+            case 'ss': await handleScreenshotRequest(interaction); break
+            case 'schedule': await handleScheduleRequest(interaction); break
+            case 'details': await handleDetailsRequest(interaction); break
         }
     } else if (interaction.isButton()) {
         const [customId, session] = interaction.customId.split('#')
-        if (customId === 'solve-captcha-button') {
-            handleSolveButtonClicked(interaction, session, false)
-        } else if (customId === 'solve-captcha-scheduled-button') {
-            handleSolveButtonClicked(interaction, session, true)
-        } else if (customId === 'stop-recording') {
-            handleStopRecordingClicked(interaction, session)
-        } else if (customId === 'delete-scheduled') {
-            handleDeleteScheduledClicked(interaction, session)
+        switch (customId) {
+            case 'solve-captcha-button': handleSolveButtonClicked(interaction, session, false); break
+            case 'solve-captcha-scheduled-button': handleSolveButtonClicked(interaction, session, true); break
+            case 'stop-recording': handleStopRecordingClicked(interaction, session); break
+            case 'delete-scheduled': handleDeleteScheduledClicked(interaction, session); break
         }
     }
 }
@@ -496,10 +509,29 @@ const handleInteraction = async (interaction: Interaction<CacheType>) => {
 const createCommands = () => {
     return [
         new SlashCommandBuilder()
-            .setName('webex')
-            .setDescription('Requests the bot to record a webex session')
+            .setName('schedule')
+            .setDescription('Record session in the future')
             .addStringOption(new SlashCommandStringOption()
-                .setName('url')
+                .setName('link')
+                .setDescription('Link to join')
+                .setRequired(true))
+            .addStringOption(new SlashCommandStringOption()
+                .setName('when')
+                .setDescription('When to join yyyy.MM.dd hh:mm:ss')
+                .setRequired(true))
+            .addStringOption(new SlashCommandStringOption()
+                .setName('name')
+                .setDescription('Name this meeting')
+                .setMaxLength(60)
+                .setRequired(false)),
+        new SlashCommandBuilder()
+            .setName('stop')
+            .setDescription('Immediately stop current recording'),
+        new SlashCommandBuilder()
+            .setName('webex')
+            .setDescription('Record webex session now')
+            .addStringOption(new SlashCommandStringOption()
+                .setName('link')
                 .setDescription('Link to meeting')
                 .setRequired(true))
             .addBooleanOption(new SlashCommandBooleanOption()
@@ -508,43 +540,25 @@ const createCommands = () => {
                 .setRequired(false)),
         new SlashCommandBuilder()
             .setName('teams')
-            .setDescription('Requests the bot to record a ms teams session')
+            .setDescription('Record ms teams session now')
             .addStringOption(new SlashCommandStringOption()
-                .setName('url')
-                .setDescription('Link to meeting')
+                .setName('link')
+                .setDescription('Link to channel or meeting')
                 .setRequired(true)),
         new SlashCommandBuilder()
-            .setName('stop')
-            .setDescription('Requests the bot to stop the recording'),
+            .setName('upcoming')
+            .setDescription('View upcoming scheduled recordings'),
         new SlashCommandBuilder()
-            .setName('ss')
-            .setDescription('Takes screenshot of current page'),
-        new SlashCommandBuilder()
-            .setName('schedule')
-            .setDescription('Schedules request to record page')
-            .addStringOption(new SlashCommandStringOption()
-                .setName('url')
-                .setDescription('Link to meeting')
-                .setRequired(true))
-            .addStringOption(new SlashCommandStringOption()
-                .setName('date')
-                .setDescription('Date and time of the meeting')
-                .setRequired(true))
-            .addStringOption(new SlashCommandStringOption()
-                .setName('name')
-                .setDescription('Name of this meeting')
-                .setMaxLength(40)
-                .setRequired(false)),
-        new SlashCommandBuilder()
-            .setName('next-recordings')
-            .setDescription('See next scheduled recordings'),
-        new SlashCommandBuilder()
-            .setName('scheduled-details')
-            .setDescription('See details of scheduled recordings')
+            .setName('details')
+            .setDescription('View details of upcoming recording')
             .addStringOption(new SlashCommandStringOption()
                 .setName('id')
                 .setDescription('ID of the meeting')
-                .setRequired(true)),
+                .setRequired(true)
+                .setAutocomplete(true)),
+        new SlashCommandBuilder()
+            .setName('ss')
+            .setDescription('Takes screenshot of current page'),
     ]
 }
 

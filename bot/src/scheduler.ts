@@ -22,6 +22,12 @@ const startWebex = async (entry: ScheduledRecording) => {
 
     const initialMessage = await channel.send({
         content: `Hey <@${entry.scheduledBy}>! Joining webex for scheduled meeting ${entry.name || 'unnamed'} (\`${entry.id}\`), may need your help with captcha`,
+        components: [new ActionRowBuilder()
+            .addComponents(new ButtonBuilder()
+                .setURL(entry.url)
+                .setLabel(`Enter yourself`)
+                .setStyle(ButtonStyle.Link)) as any
+        ],
     })
 
     try {
@@ -86,6 +92,12 @@ const startTeams = async (entry: ScheduledRecording) => {
 
     const initialMessage = await channel.send({
         content: `Hey <@${entry.scheduledBy}>! Joining teams for scheduled meeting ${entry.name || 'unnamed'} (\`${entry.id}\`)`,
+        components: [new ActionRowBuilder()
+            .addComponents(new ButtonBuilder()
+                .setURL(entry.url)
+                .setLabel(`Enter yourself`)
+                .setStyle(ButtonStyle.Link)) as any
+        ],
     })
 
     try {
@@ -120,7 +132,7 @@ const startTeams = async (entry: ScheduledRecording) => {
                 new ButtonBuilder()
                     .setCustomId(`stop-recording#${session}`)
                     .setLabel(`Stop recording`)
-                    .setStyle(ButtonStyle.Primary),
+                    .setStyle(ButtonStyle.Danger),
             ) as any],
     })
 

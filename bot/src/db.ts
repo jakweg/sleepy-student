@@ -10,6 +10,7 @@ export type ScheduledRecording = Readonly<{
     timestamp: number
     scheduledBy: string
     channel: string
+    creationTimestamp: number
 }>
 
 interface Database {
@@ -45,7 +46,7 @@ const saveDb = async () => {
 
 const getRandomId = () => (Math.random() * 0xFFFF | 0).toString(16).padStart(2, '0')
 
-export const scheduleNewRecording = async (data: Omit<ScheduledRecording, 'id'>): Promise<ScheduledRecording> => {
+export const scheduleNewRecording = async (data: Omit<ScheduledRecording, 'id' | 'creationTimestamp'>): Promise<ScheduledRecording> => {
     if (data.timestamp < Date.now())
         throw new Error(`Attempt to schedule recording in the past`)
 
@@ -54,10 +55,10 @@ export const scheduleNewRecording = async (data: Omit<ScheduledRecording, 'id'>)
         id = getRandomId()
     } while (instance.scheduledRecordings[id] !== undefined);
 
-    instance.scheduledRecordings[id] = { ...data }
+    const object = instance.scheduledRecordings[id] = { creationTimestamp: Date.now(), ...data }
     await saveDb()
 
-    return { id, ...data }
+    return { id, ...object }
 }
 
 export const popFromThePast = async (): Promise<ReadonlyArray<ScheduledRecording>> => {
