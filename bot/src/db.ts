@@ -81,6 +81,7 @@ export const getAll = (): ReadonlyArray<ScheduledRecording> => {
     const toReturn = Object
         .entries(instance.scheduledRecordings)
         .map(e => ({ id: e[0], ...e[1] }))
+        .sort((a, b) => a.timestamp - b.timestamp)
 
     return toReturn
 }
