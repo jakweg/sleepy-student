@@ -41,6 +41,10 @@ export const startRecording = async (page: Page, sessionId: string, suggestedSav
                 '-i', AUDIO_PATH,
                 '-c:v', 'libx264',
                 '-crf', '38',
+                '-c:a', 'aac',
+                '-abr', '1',
+                '-b:a', '32k',
+                '-ac', '1',
                 TEMPORARY_MERGED_PATH, '-y',])
 
             merger.once('close', async () => {
