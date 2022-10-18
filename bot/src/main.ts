@@ -1,6 +1,6 @@
 import { spawn as nodeSpawn, spawnSync } from 'child_process';
 import { ActivityType } from 'discord.js';
-import { unlink } from 'fs/promises';
+import { unlink, writeFile } from 'fs/promises';
 import process from 'process';
 import { launch as launchBrowser } from './browser';
 import { HEIGHT, WIDTH } from './config';
@@ -10,6 +10,9 @@ import { spawn } from './process';
 import { initScheduler } from './scheduler';
 import { sleep } from './utils';
 
+try { spawnSync('rm', ['/run/pulse', '-rf'], { stdio: 'ignore' }) } catch (e) { void e }
+try { spawnSync('rm', ['/tmp/pulse-*', '-rf'], { stdio: 'ignore' }) } catch (e) { void e }
+await writeFile('/etc/pulse/daemon.conf', 'use-pid-file=no')
 try { spawnSync('pulseaudio', ['-k'], { stdio: 'ignore' }) } catch (e) { void e }
 spawn(['pulseaudio', '-D'])
 
