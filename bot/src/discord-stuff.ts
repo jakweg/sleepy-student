@@ -1,86 +1,11 @@
 import { ActionRowBuilder, AttachmentBuilder, AutocompleteInteraction, BaseMessageOptions, ButtonBuilder, ButtonInteraction, ButtonStyle, CacheType, ChatInputCommandInteraction, Client, Interaction, MessagePayload, ModalBuilder, REST, Routes, SlashCommandBuilder, SlashCommandStringOption, TextInputBuilder, TextInputStyle } from "discord.js";
-import { ALLOWED_CHANNELS, LOCALE, MAX_MEETING_DURATION_MINUTES, MS_TEAMS_CREDENTIALS_LOGIN, MS_TEAMS_CREDENTIALS_PASSWORD, RECORDINGS_PATH, RECORDING_READY_MESSAGE_FORMAT } from "./config";
+import { ALLOWED_CHANNELS, LOCALE, MAX_MEETING_DURATION_MINUTES, RECORDING_READY_MESSAGE_FORMAT } from "./config";
 import { assertActiveSession, currentState, updateState } from "./current-state";
 import { deleteById, findById, getAll, ScheduledRecording, scheduleNewRecording } from "./db";
-import { startTeamsSession } from "./logic-teams";
-import { createWebexSession, fillCaptchaAndJoin } from "./logic-webex";
+import { fillCaptchaAndJoin } from "./logic-webex";
 import { DISCORD } from "./main";
-import { startRecording, stopRecording } from "./recorder";
+import { stopRecording } from "./recorder";
 import { sleep } from "./utils";
-
-const startWebex = async (sessionId: string, interaction: ChatInputCommandInteraction<CacheType>) => {
-    assertActiveSession(sessionId)
-
-    const webex = await createWebexSession(currentState.page, currentState.options!.url)
-
-    assertActiveSession(sessionId)
-
-    if (webex.captchaImage !== 'not-needed') {
-        updateState({
-            type: 'waiting-for-solution-for-webex-captcha',
-        })
-
-        const attachment = new AttachmentBuilder(webex.captchaImage);
-
-        await interaction.followUp({
-            content: 'Please solve this captcha',
-            files: [attachment],
-            components: [new ActionRowBuilder()
-                .addComponents(
-                    new ButtonBuilder()
-                        .setCustomId(`solve-captcha-button#${sessionId}`)
-                        .setLabel(`I'm ready`)
-                        .setStyle(ButtonStyle.Primary),
-                ) as any],
-            ephemeral: true
-        });
-    } else {
-        console.log('Looks like captcha is not needed for this webex');
-
-        await advanceWebexAndJoin(sessionId, null, async (options) => {
-            return [interaction.channelId, (await interaction.followUp({ ephemeral: true, ...options } as any)).id]
-        })
-    }
-}
-
-const handleRequestWebexStart = async (interaction: ChatInputCommandInteraction<CacheType>) => {
-    if (currentState.type !== 'idle') {
-        await interaction.reply({
-            content: `Sorry, but I'm busy now`,
-            ephemeral: true,
-        })
-        return
-    }
-
-    const session = `${Date.now()}`
-    const url = interaction.options.getString('link')!
-    const showChat = !!interaction.options.getBoolean('show-chat')
-
-    updateState({
-        type: "preparing-for-webex-captcha",
-        options: { sessionId: session, showChat, url },
-    })
-
-
-    await interaction.reply({
-        content: `I'm joining...`,
-        ephemeral: true,
-    })
-
-    try {
-        await startWebex(session, interaction)
-    } catch (e) {
-        console.error(e)
-        interaction.followUp({
-            content: 'Something went wrong',
-            ephemeral: true
-        });
-        assertActiveSession(session)
-        updateState({
-            type: "idle",
-        })
-    }
-}
 
 const handleSolveButtonClicked = async (interaction: ButtonInteraction<CacheType>, session: string, isScheduled: boolean) => {
     if (session && session !== currentState.options?.sessionId) {
@@ -234,7 +159,7 @@ const handleScreenshotRequest = async (interaction: ChatInputCommandInteraction<
     });
 }
 
-const handleScheduleRequest = async (interaction: ChatInputCommandInteraction<CacheType>) => {
+const handleRecordRequest = async (interaction: ChatInputCommandInteraction<CacheType>) => {
     await interaction.deferReply({ ephemeral: true })
 
     const url = interaction.options.getString('link')
@@ -305,92 +230,6 @@ const handleScheduleRequest = async (interaction: ChatInputCommandInteraction<Ca
                     .setStyle(ButtonStyle.Secondary),
             ) as any],
     });
-}
-
-const handleRequestTeamsStart = async (interaction: ChatInputCommandInteraction<CacheType>) => {
-    if (currentState.type !== 'idle') {
-        await interaction.reply({
-            content: `I'm busy`,
-            ephemeral: true,
-        })
-        return
-    }
-
-    if (!MS_TEAMS_CREDENTIALS_LOGIN || !MS_TEAMS_CREDENTIALS_PASSWORD) {
-        await interaction.reply({
-            content: `teams are disabled`,
-            ephemeral: true,
-        })
-        return
-    }
-
-    const page = currentState.page
-    const url = interaction.options.getString('link')!
-
-    const session = `${Date.now()}`
-    updateState({
-        type: 'joining-teams',
-        options: {
-            sessionId: session,
-            showChat: false, url,
-        },
-    })
-
-    await interaction.reply({
-        content: 'Joining teams!',
-        ephemeral: true,
-    })
-
-    try {
-        await startTeamsSession(url, page)
-    } catch (e) {
-        console.error('Failed to join teams', e)
-
-        await page.screenshot({ captureBeyondViewport: true, fullPage: true, path: `${RECORDINGS_PATH}/debug-failed-teams.png` })
-        await page.goto('about:blank', { waitUntil: 'networkidle2' })
-        updateState({
-            type: 'idle',
-        })
-
-        await interaction.followUp({
-            content: 'Failed to join teams',
-            ephemeral: true,
-        })
-        return
-    }
-    assertActiveSession(session)
-
-    const recording = await startRecording(page, session, `unnamed-teams-${new Date().toJSON()}`)
-
-    updateState({
-        type: 'recording-teams',
-        stopRecordingCallback: recording.stop
-    })
-
-    await interaction.followUp({
-        content: 'Recording started',
-        ephemeral: true,
-        components: [new ActionRowBuilder()
-            .addComponents(
-                new ButtonBuilder()
-                    .setCustomId(`stop-recording#${session}`)
-                    .setLabel(`Stop recording`)
-                    .setStyle(ButtonStyle.Danger),
-            ) as any],
-    })
-
-    const scheduled = currentState.options?.scheduled
-    sleep(MAX_MEETING_DURATION_MINUTES * 60 * 1000)
-        .then(async () => {
-            try {
-                assertActiveSession(session)
-                await stopRecording(publishRecordingReadyMessage(scheduled, null))
-
-                await interaction.reply({
-                    content: `Scheduled recording stopped after ${MAX_MEETING_DURATION_MINUTES} minutes`,
-                })?.catch(e => void (e))
-            } catch (e) { }
-        },);
 }
 
 const handleDeleteScheduledClicked = async (interaction: ButtonInteraction<CacheType>, id: string | null) => {
@@ -493,10 +332,8 @@ const handleInteraction = async (interaction: Interaction<CacheType>) => {
 
         switch (commandName) {
             case 'stop': handleStopRecordingClicked(interaction, null); break
-            case 'webex': await handleRequestWebexStart(interaction); break
-            case 'teams': await handleRequestTeamsStart(interaction); break
             case 'ss': await handleScreenshotRequest(interaction); break
-            case 'record': await handleScheduleRequest(interaction); break
+            case 'record': await handleRecordRequest(interaction); break
             case 'details': await handleDetailsRequest(interaction); break
             case 'upcoming': await handleNextRecordingsRequest(interaction); break
         }
@@ -532,24 +369,6 @@ const createCommands = () => {
         new SlashCommandBuilder()
             .setName('stop')
             .setDescription('Immediately stop current recording'),
-        // new SlashCommandBuilder()
-        //     .setName('webex')
-        //     .setDescription('Record webex session now')
-        //     .addStringOption(new SlashCommandStringOption()
-        //         .setName('link')
-        //         .setDescription('Link to meeting')
-        //         .setRequired(true))
-        //     .addBooleanOption(new SlashCommandBooleanOption()
-        //         .setName('show-chat')
-        //         .setDescription('Show chat in the recording')
-        //         .setRequired(false)),
-        // new SlashCommandBuilder()
-        //     .setName('teams')
-        //     .setDescription('Record ms teams session now')
-        //     .addStringOption(new SlashCommandStringOption()
-        //         .setName('link')
-        //         .setDescription('Link to channel or meeting')
-        //         .setRequired(true)),
         new SlashCommandBuilder()
             .setName('upcoming')
             .setDescription('View upcoming scheduled recordings'),
