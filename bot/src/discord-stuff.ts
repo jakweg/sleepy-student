@@ -70,6 +70,43 @@ const handleSolveButtonClicked = async (interaction: ButtonInteraction<CacheType
 }
 
 const handleStopRecordingClicked = async (interaction: ButtonInteraction | ChatInputCommandInteraction, sessionId: string | null) => {
+    if (!currentState.session) {
+        await interaction.reply({
+            content: `There is no recording going on`,
+            ephemeral: true,
+        })
+        return
+    }
+    // await interaction.showModal(new ModalBuilder()
+    //     .setCustomId(`captcha-modal#${sessionId}`)
+    //     .setTitle('Solve the captcha'))
+
+    // const modalResult = await interaction.awaitModalSubmit({ time: 0 })
+    // await handleStopRecordingConfirmedClicked(modalResult, sessionId)
+
+    await interaction.reply({
+        content: `**Really stop the recording?**`,
+        components: [new ActionRowBuilder<ButtonBuilder>()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId(`stop-recording-confirmed#${sessionId ?? currentState.session?.sessionId ?? 'any'}`)
+                    .setLabel(`YES`)
+                    .setStyle(ButtonStyle.Danger),
+                new ButtonBuilder()
+                    .setCustomId(`stop-recording-cancel#any`)
+                    .setLabel(`Maybe no`)
+                    .setStyle(ButtonStyle.Secondary)
+            )],
+        ephemeral: true,
+    })
+}
+
+const handleStopRecordingCancelClicked = async (interaction: ButtonInteraction | ChatInputCommandInteraction) => {
+    await interaction.reply({ content: 'Cancelled!', ephemeral: true })
+}
+
+
+const handleStopRecordingConfirmedClicked = async (interaction: ButtonInteraction | ChatInputCommandInteraction, sessionId: string | null) => {
     if (currentState.session) {
         if (sessionId !== null && currentState.session.sessionId !== sessionId) {
             await interaction.reply({
@@ -305,6 +342,8 @@ const handleInteraction = async (interaction: Interaction<CacheType>) => {
         switch (customId) {
             case 'solve-captcha-scheduled-button': await handleSolveButtonClicked(interaction, sessionId); break
             case 'stop-recording': await handleStopRecordingClicked(interaction, sessionId); break
+            case 'stop-recording-confirmed': await handleStopRecordingConfirmedClicked(interaction, sessionId); break
+            case 'stop-recording-cancel': await handleStopRecordingCancelClicked(interaction); break
             case 'delete-scheduled': await handleDeleteScheduledClicked(interaction, sessionId); break
         }
     }

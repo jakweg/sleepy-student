@@ -57,6 +57,8 @@ export const fillCaptchaAndJoin = async (session: Session, captcha: string | nul
     await sleep(300)
     const [name, mail, characters] = results
     await name.evaluate(element => (element as any).value = '')
+    await name.click({ clickCount: 3 });
+    await name.press('Backspace');
     for (const c of randomizeLettersCase(WEBEX_NAME)) {
         await sleep(Math.random() * 300 + 300)
         await name.type(c)
@@ -74,6 +76,9 @@ export const fillCaptchaAndJoin = async (session: Session, captcha: string | nul
     }
 
     if (characters && captcha) {
+        await characters.evaluate(element => (element as any).value = '')
+        await characters.click({ clickCount: 3 });
+        await characters.press('Backspace');
         await sleep(Math.random() * 500 + 100)
         for (const c of captcha) {
             await sleep(Math.random() * 300 + 300)
@@ -95,6 +100,7 @@ export const fillCaptchaAndJoin = async (session: Session, captcha: string | nul
     await sleep(1000)
     try { await frame.click('[data-doi="VIDEO:STOP_VIDEO:MEETSIMPLE_INTERSTITIAL"]'); await sleep(500) } catch (e) { }
     await frame.click('[data-doi="MEETING:JOIN_MEETING:MEETSIMPLE_INTERSTITIAL"]'); await sleep(500)
+    session.assertActive()
     try { await frame.click('[data-doi="VIDEO:JOIN_MEETING:MEETSIMPLE_INTERSTITIAL"]'); } catch (e) { }
 
     const waitToBeJoined = async () => {

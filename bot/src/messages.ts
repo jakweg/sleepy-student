@@ -38,7 +38,6 @@ const fromState = (entry: ScheduledRecording, sessionId: string, recording: Reco
         content += 'May need your help with captcha\n'
 
     if (recording && recording.status === 'running') {
-        content += 'Recording continues...\n'
         buttons.push(
             new ButtonBuilder()
                 .setCustomId(`stop-recording#${sessionId}`)
