@@ -1,5 +1,5 @@
 import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle, MessageCreateOptions } from "discord.js";
-import { RECORDING_READY_MESSAGE_FORMAT, RECORDING_READY_URL_FORMAT } from "./config";
+import { RECORDING_READY_URL_FORMAT } from "./config";
 import { ScheduledRecording } from "./db";
 import { RecordingState } from "./session";
 
@@ -69,7 +69,7 @@ const fromState = (entry: ScheduledRecording, sessionId: string, recording: Reco
     }
 
     if (recording && recording.readyFilename && recording.status === 'ready') {
-        content += `${RECORDING_READY_MESSAGE_FORMAT.replace('%name%', recording.readyFilename)}\n`
+        content += 'Recording is now available'
         if (RECORDING_READY_URL_FORMAT)
             buttons.push(new ButtonBuilder()
                 .setURL(`${RECORDING_READY_URL_FORMAT.replace('%name%', recording.readyFilename)}`)
