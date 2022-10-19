@@ -1,10 +1,8 @@
 import { spawn as nodeSpawn, spawnSync } from 'child_process';
-import { ActivityType } from 'discord.js';
 import { unlink, writeFile } from 'fs/promises';
 import process from 'process';
 import { launch as launchBrowser } from './browser';
 import { HEIGHT, WIDTH } from './config';
-import { addStateListener, updateState } from './current-state';
 import { launch as launchDiscord } from './discord-stuff';
 import { spawn } from './process';
 import { initScheduler } from './scheduler';
@@ -30,22 +28,13 @@ try {
 
 await sleep(500)
 
-const browser = await launchBrowser()
-export const DISCORD = await launchDiscord()
+export const [BROWSER, DISCORD] = await Promise.all([launchBrowser(), launchDiscord()])
 
-addStateListener(state => {
-    if (state.type === 'recording-webex' || state.type === 'recording-teams')
-        DISCORD.user?.setActivity({ name: 'session for You', type: ActivityType.Watching })
-    else
-        DISCORD.user?.setActivity(undefined)
-})
-
-addStateListener(state => {
-    console.log('changed state to', state.type);
-})
-
-updateState({
-    page: (await browser.pages())[0] ?? await browser.newPage(),
-})
+// addStateListener(state => {
+//     if (state.type === 'recording-webex' || state.type === 'recording-teams')
+//         DISCORD.user?.setActivity({ name: 'session for You', type: ActivityType.Watching })
+//     else
+//         DISCORD.user?.setActivity(undefined)
+// })
 
 initScheduler()

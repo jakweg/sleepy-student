@@ -1,5 +1,6 @@
 import { Page } from "puppeteer"
 import { MS_TEAMS_CREDENTIALS_LOGIN, MS_TEAMS_CREDENTIALS_ORIGINS, MS_TEAMS_CREDENTIALS_PASSWORD } from "./config"
+import Session from "./session"
 import { sleep } from "./utils"
 
 const requireOriginForCredentials = (page: Page) => {
@@ -9,10 +10,13 @@ const requireOriginForCredentials = (page: Page) => {
         throw new Error(`Origin ${origin} not permitted to enter credentials`)
 }
 
-export const startTeamsSession = async (url: string, page: Page) => {
+export const startTeamsSession = async (url: string, session: Session) => {
+    const page = session.page
 
+    session.assertActive()
     await page.browserContext().overridePermissions(url, ['microphone', 'camera'])
     await page.goto(url, { waitUntil: "networkidle2" })
+    session.assertActive()
 
     let willLogin = true
     try {
@@ -30,6 +34,7 @@ export const startTeamsSession = async (url: string, page: Page) => {
         await page.waitForSelector('input[type=password]', { timeout: 20_000, })
         await page.waitForSelector('input[type=text]', { timeout: 20_000, })
 
+        session.assertActive()
         await page.evaluate(() => (document.querySelector('input[type=email]') as HTMLInputElement || { value: '' }).value = '')
         requireOriginForCredentials(page)
         try { await page.type('input[type=email]', MS_TEAMS_CREDENTIALS_LOGIN!, { delay: 20 }) } catch (e) { }
@@ -43,11 +48,13 @@ export const startTeamsSession = async (url: string, page: Page) => {
         requireOriginForCredentials(page)
         await page.click('input[type=submit]')
         await sleep(10_000)
+        session.assertActive()
     }
 
     await page.goto(url, { waitUntil: "domcontentloaded" })
     await sleep(3_000)
 
+    session.assertActive()
     try {
         await page.waitForSelector('button[type=button].icons-call-jump-in', { timeout: 20_000 })
     } catch (e) {
@@ -72,6 +79,7 @@ export const startTeamsSession = async (url: string, page: Page) => {
     await page.click('button[type=button].icons-call-jump-in')
 
     await page.waitForSelector('button[type=button].join-btn', { timeout: 10_000 })
+    session.assertActive()
     await page.click('button[type=button].join-btn')
 
     try {
@@ -81,12 +89,15 @@ export const startTeamsSession = async (url: string, page: Page) => {
     }
 
     await page.waitForSelector('#microphone-button', { timeout: 60_000 })
+    session.assertActive()
     await page.click('#microphone-button')
 
     await page.waitForSelector('#callingButtons-showMoreBtn', { timeout: 10_000 })
+    session.assertActive()
     await page.click('#callingButtons-showMoreBtn')
 
     await page.waitForSelector('#full-screen-button', { timeout: 10_000 })
+    session.assertActive()
     await page.click('#full-screen-button')
 
     sleep(1_000)

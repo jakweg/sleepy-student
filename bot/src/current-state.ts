@@ -11,13 +11,3 @@ export const updateState = (newState: Partial<State>) => {
 export const addStateListener = (l: (s: State) => void) => {
     stateListeners.push(l)
 }
-
-export const assertActiveSession = (sessionId: string) => {
-    if (currentState.options?.sessionId !== sessionId)
-        throw new Error('Session ended')
-}
-
-addStateListener(s => {
-    if (s.type === 'idle' && s.options != null)
-        updateState({ options: null })
-})

@@ -1,19 +1,8 @@
-import * as puppeteer from 'puppeteer';
-import { ScheduledRecording } from './db';
+import Session from './session';
 
-export interface RecordingStartOptions {
-    sessionId: string
-    url: string
-    showChat: boolean
-    scheduled?: ScheduledRecording
-}
 
 export const defaultState = {
-    type: 'idle' as 'idle' | 'preparing-for-webex-captcha' | 'waiting-for-solution-for-webex-captcha' | 'joining-webex' | 'recording-webex' | 'joining-teams' | 'recording-teams',
-    page: (null as any) as puppeteer.Page,
-    options: null as (RecordingStartOptions | null),
-    stopRecordingButtonId: null as ([string, string] | null),
-    stopRecordingCallback: (whenFinished: (name: string) => void) => { }
+    session: (null as null | Session),
 }
 
 export type State = typeof defaultState

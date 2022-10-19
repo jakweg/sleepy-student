@@ -1,7 +1,6 @@
 import { Page } from "puppeteer"
 import { RECORDINGS_PATH, WEBEX_MAIL, WEBEX_NAME } from "./config"
-import { currentState } from "./current-state"
-import { startRecording } from './recorder'
+import Session from "./session"
 import { sleep } from "./utils"
 
 export const createWebexSession = async (page: Page, url: string): Promise<{ captchaImage: Buffer | 'not-needed' }> => {
@@ -43,16 +42,19 @@ export const randomizeLettersCase = (text: string, upperProbability: number = 0.
     return text.split('').map(e => Math.random() < upperProbability ? e.toLocaleUpperCase() : e.toLocaleLowerCase()).join('')
 }
 
-export const fillCaptchaAndJoin = async (page: Page, captcha: string, sessionId: string, suggestedSaveName: string) => {
+export const fillCaptchaAndJoin = async (session: Session, captcha: string | null,) => {
+    session.assertActive()
+    const page = session.page
     let frameIndex = (await Promise.all(page.frames().map(e => e.$('#guest_next-btn')))).findIndex(e => e)
     let frame = page.frames()[frameIndex]
     if (!frame) throw new Error('missing inputs frame')
 
+    session.assertActive()
     const results = await frame.$$('#meetingSimpleContainer input')
     if (!results) throw new Error('missing inputs')
 
     await page.focus('body')
-    await sleep(1000)
+    await sleep(300)
     const [name, mail, characters] = results
     await name.evaluate(element => (element as any).value = '')
     for (const c of randomizeLettersCase(WEBEX_NAME)) {
@@ -60,7 +62,8 @@ export const fillCaptchaAndJoin = async (page: Page, captcha: string, sessionId:
         await name.type(c)
     }
 
-    await sleep(Math.random() * 500 + 500)
+    session.assertActive()
+    await sleep(Math.random() * 500 + 100)
     await mail.evaluate(element => (element as any).value = '')
     await mail.click({ clickCount: 3 });
     await mail.press('Backspace');
@@ -71,13 +74,14 @@ export const fillCaptchaAndJoin = async (page: Page, captcha: string, sessionId:
     }
 
     if (characters && captcha) {
-        await sleep(Math.random() * 500 + 500)
+        await sleep(Math.random() * 500 + 100)
         for (const c of captcha) {
             await sleep(Math.random() * 300 + 300)
             await characters.type(c)
         }
     }
     await sleep(300)
+    session.assertActive()
     await frame.click('#guest_next-btn')
 
     for (let i = 0; i < 20; ++i) {
@@ -86,6 +90,7 @@ export const fillCaptchaAndJoin = async (page: Page, captcha: string, sessionId:
         if (frame) break
         await sleep(1000)
     }
+    session.assertActive()
     if (!frame) throw new Error('missing join button')
     await sleep(1000)
     try { await frame.click('[data-doi="VIDEO:STOP_VIDEO:MEETSIMPLE_INTERSTITIAL"]'); await sleep(500) } catch (e) { }
@@ -98,12 +103,14 @@ export const fillCaptchaAndJoin = async (page: Page, captcha: string, sessionId:
             if (isMeetHidden)
                 return
 
+            session.assertActive()
             await sleep(1000)
         }
     }
 
     await waitToBeJoined()
 
+    session.assertActive()
     try { await frame.click('[data-doi="AUDIO:MUTE_SELF:MEETSIMPLE_INTERSTITIAL"]'); } catch (e) { }
     try { await frame.click('[data-doi="AUDIO:UNMUTE_SELF:MENU_CONTROL_BAR"]'); } catch (e) { }
 
@@ -112,7 +119,7 @@ export const fillCaptchaAndJoin = async (page: Page, captcha: string, sessionId:
         .catch(e => void (e))
 
     sleep(6000)
-        .then(() => frame.waitForSelector('[title="Got it"]', { timeout: 10000 }))
+        .then(() => frame.waitForSelector('[title="Got it"]', { timeout: 0 }))
         .then(() => frame.click('[title="Got it"]'))
         .catch(e => void (e))
 
@@ -138,14 +145,12 @@ export const fillCaptchaAndJoin = async (page: Page, captcha: string, sessionId:
         .then(() => frame.click('[aria-label*="close"]'))
         .catch(e => void (e))
 
-    if (currentState.type === 'joining-webex' && currentState.options?.showChat)
-        frame.waitForSelector('[data-doi="CHAT:OPEN_CHAT_PANEL:MENU_CONTROL_BAR"]', { timeout: 5000 })
-            .then(() => sleep(1000))
-            .then(() => frame.click('[data-doi="CHAT:OPEN_CHAT_PANEL:MENU_CONTROL_BAR"]'))
-            .catch(e => void (e))
+    // frame.waitForSelector('[data-doi="CHAT:OPEN_CHAT_PANEL:MENU_CONTROL_BAR"]', { timeout: 5000 })
+    //     .then(() => sleep(1000))
+    //     .then(() => frame.click('[data-doi="CHAT:OPEN_CHAT_PANEL:MENU_CONTROL_BAR"]'))
+    //     .catch(e => void (e))
 
     return {
         isMeetingStopped: async () => !!(await frame.$('[aria-label="The meeting has ended."]')),
-        stop: await startRecording(page, sessionId, suggestedSaveName)
     }
 }
