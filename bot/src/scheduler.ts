@@ -1,6 +1,6 @@
 import { MAX_MEETING_DURATION_MINUTES, RECORDINGS_PATH, SCHEDULER_INTERVAL_MS } from "./config";
 import { currentState, updateState } from "./current-state";
-import { popFromThePast, ScheduledRecording } from "./db";
+import { addToPast, popFromThePast, ScheduledRecording } from "./db";
 import { advanceWebexAndJoin } from "./discord-stuff";
 import { startTeamsSession } from "./logic-teams";
 import { createWebexSession } from "./logic-webex";
@@ -64,12 +64,15 @@ const doCheck = async () => {
 
     const entry = fromPast[0]
 
+    await addToPast(entry)
+
     const session = await Session.createWithNewScheduledMessage(entry)
     updateState({
         session,
     })
 
     console.log(entry);
+
     session.do(async () => {
         if (entry.type === 'webex') {
             await startWebex(entry)

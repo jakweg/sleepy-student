@@ -76,6 +76,14 @@ const fromState = (entry: ScheduledRecording, sessionId: string, recording: Reco
                 .setStyle(ButtonStyle.Link))
     }
 
+
+    if (recording && recording.status === 'ready') {
+        buttons.push(new ButtonBuilder()
+            .setCustomId(`schedule-next-week#${entry.id}`)
+            .setLabel(`Schedule same meeting next week`)
+            .setStyle(ButtonStyle.Success))
+    }
+
     return {
         content,
         components: [

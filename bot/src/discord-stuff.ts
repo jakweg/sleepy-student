@@ -1,7 +1,7 @@
 import { ActionRowBuilder, AttachmentBuilder, AutocompleteInteraction, ButtonBuilder, ButtonInteraction, ButtonStyle, CacheType, ChatInputCommandInteraction, Client, Interaction, ModalBuilder, REST, Routes, SlashCommandBuilder, SlashCommandStringOption, TextInputBuilder, TextInputStyle } from "discord.js";
 import { ALLOWED_CHANNELS, LOCALE, MAX_MEETING_DURATION_MINUTES } from "./config";
 import { currentState, updateState } from "./current-state";
-import { deleteById, findById, getAll, scheduleNewRecording } from "./db";
+import { deleteById, findById, findInPastIfNotUsedByIdAndMarkUsed, getAll, scheduleNewRecording } from "./db";
 import { fillCaptchaAndJoin } from "./logic-webex";
 import Session, { WebexSession } from "./session";
 
@@ -247,6 +247,42 @@ const handleDeleteScheduledClicked = async (interaction: ButtonInteraction<Cache
     });
 }
 
+const handleScheduleNextWeek = async (interaction: ButtonInteraction<CacheType>, id: string | null) => {
+    const originalMessage = await interaction.message.fetch(true)
+
+    const row = originalMessage.components[0].toJSON()
+    const scheduleButton = row.components.find(e => (e as any)['custom_id']?.startsWith('schedule-next-week#'))
+    if (scheduleButton) {
+        scheduleButton.disabled = true
+        scheduleButton['label'] = 'Scheduled for next week'
+    }
+    originalMessage.edit({ components: [row] }).catch(e => void (e))
+
+    const oldEntry = await findInPastIfNotUsedByIdAndMarkUsed(id || '')
+    if (!oldEntry) {
+        await interaction.reply({
+            content: `Not found this meeting`,
+            ephemeral: true
+        })
+        return
+    }
+    try {
+        const newScheduled = await scheduleNewRecording({ ...oldEntry, timestamp: oldEntry.timestamp + 7 * 24 * 60 * 60 * 1000, scheduledBy: interaction.user.id })
+
+        await interaction.reply({
+            content: `Scheduled ${newScheduled.name || 'unnamed'} for day ${new Date(newScheduled.timestamp).toLocaleString(LOCALE)}`,
+            ephemeral: true
+        });
+
+    } catch (e) {
+        console.error(e.message)
+        await interaction.reply({
+            content: `Too late`,
+            ephemeral: true
+        });
+    }
+}
+
 const handleNextRecordingsRequest = async (interaction: ChatInputCommandInteraction<CacheType>) => {
 
     const all = getAll();
@@ -345,6 +381,7 @@ const handleInteraction = async (interaction: Interaction<CacheType>) => {
             case 'stop-recording-confirmed': await handleStopRecordingConfirmedClicked(interaction, sessionId); break
             case 'stop-recording-cancel': await handleStopRecordingCancelClicked(interaction); break
             case 'delete-scheduled': await handleDeleteScheduledClicked(interaction, sessionId); break
+            case 'schedule-next-week': await handleScheduleNextWeek(interaction, sessionId); break
         }
     }
 }

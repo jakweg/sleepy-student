@@ -15,10 +15,11 @@ export type ScheduledRecording = Readonly<{
 
 interface Database {
     scheduledRecordings: { [key: string]: Omit<ScheduledRecording, 'id'> }
+    pastRecordings: { [key: string]: Omit<ScheduledRecording & { used?: true }, 'id'> }
 }
 
 const initDb = async (): Promise<Database> => {
-    const object: Database = { scheduledRecordings: {} }
+    const object: Database = { scheduledRecordings: {}, pastRecordings: {} }
     await writeFile(DB_PATH, JSON.stringify(object, undefined, 1), { encoding: 'utf8' })
     return object
 }
@@ -53,8 +54,9 @@ export const scheduleNewRecording = async (data: Omit<ScheduledRecording, 'id' |
     let id: string
     do {
         id = getRandomId()
-    } while (instance.scheduledRecordings[id] !== undefined);
+    } while (instance.scheduledRecordings[id] !== undefined || instance.pastRecordings[id] !== undefined);
 
+    delete data['id']
     const object = instance.scheduledRecordings[id] = { creationTimestamp: Date.now(), ...data }
     await saveDb()
 
@@ -75,6 +77,11 @@ export const popFromThePast = async (): Promise<ReadonlyArray<ScheduledRecording
     }
 
     return toReturn
+}
+
+export const addToPast = async ({ id, ...record }: ScheduledRecording) => {
+    instance.pastRecordings[id] = record
+    await saveDb()
 }
 
 export const getAll = (): ReadonlyArray<ScheduledRecording> => {
@@ -99,6 +106,16 @@ export const deleteById = async (id: string): Promise<ScheduledRecording | null>
     const found = instance.scheduledRecordings[id]
     if (found) {
         delete instance.scheduledRecordings[id]
+        await saveDb()
+        return { id, ...found }
+    }
+    return null
+}
+
+export const findInPastIfNotUsedByIdAndMarkUsed = async (id: string): Promise<ScheduledRecording | null> => {
+    const found = instance.pastRecordings[id]
+    if (found && found.used === undefined) {
+        instance.pastRecordings[id] = { ...found, used: true }
         await saveDb()
         return { id, ...found }
     }
