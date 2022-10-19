@@ -1,7 +1,7 @@
 import { ActionRowBuilder, AttachmentBuilder, AutocompleteInteraction, ButtonBuilder, ButtonInteraction, ButtonStyle, CacheType, ChatInputCommandInteraction, Client, Interaction, ModalBuilder, REST, Routes, SlashCommandBuilder, SlashCommandStringOption, TextInputBuilder, TextInputStyle } from "discord.js";
 import { ALLOWED_CHANNELS, LOCALE, MAX_MEETING_DURATION_MINUTES } from "./config";
 import { currentState, updateState } from "./current-state";
-import { deleteById, findById, findInPastIfNotUsedByIdAndMarkUsed, getAll, scheduleNewRecording } from "./db";
+import { deleteById, findById, findInPastIfNotUsedById, findInPastIfNotUsedByIdAndMarkUsed, getAll, scheduleNewRecording } from "./db";
 import { fillCaptchaAndJoin } from "./logic-webex";
 import Session, { WebexSession } from "./session";
 
@@ -248,17 +248,8 @@ const handleDeleteScheduledClicked = async (interaction: ButtonInteraction<Cache
 }
 
 const handleScheduleNextWeek = async (interaction: ButtonInteraction<CacheType>, id: string | null) => {
-    const originalMessage = await interaction.message.fetch(true)
 
-    const row = originalMessage.components[0].toJSON()
-    const scheduleButton = row.components.find(e => (e as any)['custom_id']?.startsWith('schedule-next-week#'))
-    if (scheduleButton) {
-        scheduleButton.disabled = true
-        scheduleButton['label'] = 'Scheduled for next week'
-    }
-    originalMessage.edit({ components: [row] }).catch(e => void (e))
-
-    const oldEntry = await findInPastIfNotUsedByIdAndMarkUsed(id || '')
+    const oldEntry = findInPastIfNotUsedById(id || '')
     if (!oldEntry) {
         await interaction.reply({
             content: `Not found this meeting`,
@@ -266,17 +257,54 @@ const handleScheduleNextWeek = async (interaction: ButtonInteraction<CacheType>,
         })
         return
     }
-    try {
-        const newScheduled = await scheduleNewRecording({ ...oldEntry, timestamp: oldEntry.timestamp + 7 * 24 * 60 * 60 * 1000, scheduledBy: interaction.user.id })
 
-        await interaction.reply({
+    await interaction.showModal(new ModalBuilder()
+        .setCustomId(`reschedule-modal#any`)
+        .setTitle('Reschedule it for next week?').addComponents(
+            new ActionRowBuilder<TextInputBuilder>().addComponents(new TextInputBuilder()
+                .setCustomId('new-name')
+                .setLabel("New name for it?")
+                .setStyle(TextInputStyle.Short)
+                .setMinLength(1)
+                .setMaxLength(60)
+                .setPlaceholder('Meeting name')
+                .setRequired(true)
+                .setValue(oldEntry.name)),
+        ))
+
+    const result = await interaction.awaitModalSubmit({ time: 0 })
+    const newName = result.fields.getTextInputValue('new-name')
+
+    try {
+        const oldEntry = await findInPastIfNotUsedByIdAndMarkUsed(id || '')
+        if (!oldEntry) throw new Error('Not found!')
+
+        const newScheduled = await scheduleNewRecording({
+            ...oldEntry,
+            name: newName || oldEntry.name,
+            timestamp: oldEntry.timestamp + 7 * 24 * 60 * 60 * 1000,
+            scheduledBy: interaction.user.id
+        })
+
+        await result.reply({
             content: `Scheduled ${newScheduled.name || 'unnamed'} for day ${new Date(newScheduled.timestamp).toLocaleString(LOCALE)}`,
             ephemeral: true
         });
 
+
+        const originalMessage = await interaction.message.fetch(true)
+
+        const row = originalMessage.components[0].toJSON()
+        const scheduleButton = row.components.find(e => (e as any)['custom_id']?.startsWith('schedule-next-week#'))
+        if (scheduleButton) {
+            scheduleButton.disabled = true
+            scheduleButton['label'] = 'Scheduled for next week'
+        }
+        originalMessage.edit({ components: [row] }).catch(e => void (e))
+
     } catch (e) {
         console.error(e.message)
-        await interaction.reply({
+        await result.reply({
             content: `Too late`,
             ephemeral: true
         });

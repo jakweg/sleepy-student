@@ -121,3 +121,12 @@ export const findInPastIfNotUsedByIdAndMarkUsed = async (id: string): Promise<Sc
     }
     return null
 }
+
+
+export const findInPastIfNotUsedById = (id: string): ScheduledRecording | null => {
+    const found = instance.pastRecordings[id]
+    if (found && found.used === undefined) {
+        return { id, ...found }
+    }
+    return null
+}
