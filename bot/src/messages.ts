@@ -24,7 +24,7 @@ const fromState = (entry: ScheduledRecording, sessionId: string, recording: Reco
     } else if (recording.status === 'running') {
         content += `I'm currently recording ${entry.name || 'unnamed'} (\`${entry.id}\`)\n`
     } else {
-        content += `Meeting ${entry.name || 'unnamed'} finished (\`${entry.id}\`)\n`
+        content += `Meeting \`${entry.name || 'unnamed'}\` has finished\n`
     }
 
     if (!recording || recording.status === 'running') {
@@ -68,11 +68,11 @@ const fromState = (entry: ScheduledRecording, sessionId: string, recording: Reco
     }
 
     if (recording && recording.readyFilename && recording.status === 'ready') {
-        content += 'Recording is now available'
+        content += 'You can watch the recording now'
         if (RECORDING_READY_URL_FORMAT)
             buttons.push(new ButtonBuilder()
                 .setURL(`${RECORDING_READY_URL_FORMAT.replace('%name%', encodeURIComponent(recording.readyFilename))}`)
-                .setLabel(`See the recording`)
+                .setLabel(`Watch the recording`)
                 .setStyle(ButtonStyle.Link))
     }
 
@@ -80,7 +80,7 @@ const fromState = (entry: ScheduledRecording, sessionId: string, recording: Reco
     if (recording && recording.status === 'ready') {
         buttons.push(new ButtonBuilder()
             .setCustomId(`schedule-next-week#${entry.id}`)
-            .setLabel(`Schedule same meeting next week`)
+            .setLabel(`Schedule the same meeting next week`)
             .setStyle(ButtonStyle.Success))
     }
 
