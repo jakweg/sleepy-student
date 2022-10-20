@@ -45,11 +45,17 @@ export default class Session {
         return !this.requestedStop
     }
 
+    private _executingPromise: Promise<void> | null = null
     public async do(callback: () => Promise<void>) {
         if (this.requestedStop) return
+        if (this._executingPromise !== null) {
+            this._executingPromise.finally(() => this.do(callback))
+            return
+        }
 
         try {
-            return await callback();
+            this._executingPromise = callback().finally(() => this._executingPromise = null)
+            await this._executingPromise;
         } catch (e) {
             if (e.message !== 'Requested stop')
                 throw e;
@@ -198,5 +204,9 @@ export class WebexSession extends Session {
 
     public isWaitingForCaptcha(): boolean {
         return this._isWaitingForCaptcha
+    }
+
+    public disableWaitingForCaptcha(): void {
+        this._isWaitingForCaptcha = false
     }
 }

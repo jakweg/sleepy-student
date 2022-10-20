@@ -1,6 +1,6 @@
 import { Page } from "puppeteer"
 import { RECORDINGS_PATH, WEBEX_MAIL, WEBEX_NAME } from "./config"
-import Session from "./session"
+import { WebexSession } from "./session"
 import { sleep } from "./utils"
 
 export const createWebexSession = async (page: Page, url: string): Promise<{ captchaImage: Buffer | 'not-needed' }> => {
@@ -42,7 +42,7 @@ export const randomizeLettersCase = (text: string, upperProbability: number = 0.
     return text.split('').map(e => Math.random() < upperProbability ? e.toLocaleUpperCase() : e.toLocaleLowerCase()).join('')
 }
 
-export const fillCaptchaAndJoin = async (session: Session, captcha: string | null,) => {
+export const fillCaptchaAndJoin = async (session: WebexSession, captcha: string | null,) => {
     session.assertActive()
     const page = session.page
     let frameIndex = (await Promise.all(page.frames().map(e => e.$('#guest_next-btn')))).findIndex(e => e)

@@ -71,7 +71,7 @@ const fromState = (entry: ScheduledRecording, sessionId: string, recording: Reco
         content += 'Recording is now available'
         if (RECORDING_READY_URL_FORMAT)
             buttons.push(new ButtonBuilder()
-                .setURL(`${RECORDING_READY_URL_FORMAT.replace('%name%', recording.readyFilename)}`)
+                .setURL(`${RECORDING_READY_URL_FORMAT.replace('%name%', encodeURIComponent(recording.readyFilename))}`)
                 .setLabel(`See the recording`)
                 .setStyle(ButtonStyle.Link))
     }

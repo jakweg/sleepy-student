@@ -62,11 +62,16 @@ const handleSolveButtonClicked = async (interaction: ButtonInteraction<CacheType
         return
     }
 
-    await interaction.message.delete().catch(e => void (e))
+    await interaction.message?.delete?.()?.catch(e => void (e))
 
     result.reply({ ephemeral: true, content: 'Thanks, it really means a lot for me' })?.catch(e => void (e))
 
-    await session.do(() => advanceWebexAndJoin(session, captcha))
+    await session.do(async () => {
+        if (session.isWaitingForCaptcha()) {
+            session.disableWaitingForCaptcha()
+            advanceWebexAndJoin(session, captcha)
+        }
+    })
 }
 
 const handleStopRecordingClicked = async (interaction: ButtonInteraction | ChatInputCommandInteraction, sessionId: string | null) => {
@@ -207,7 +212,7 @@ const handleRecordRequest = async (interaction: ChatInputCommandInteraction<Cach
     else if (diff.totalMinutes > 0)
         inText += rtf.format(diff.totalMinutes, 'minute')
     else
-        inText += rtf.format(diff.totalSeconds, 'second')
+        inText += 'soon'
 
     const scheduled = await scheduleNewRecording({
         url: url!,
@@ -221,13 +226,13 @@ const handleRecordRequest = async (interaction: ChatInputCommandInteraction<Cach
     await interaction.followUp({
         content: `Scheduled recording \`${name || '(unnamed)'}\` for \`${date.toLocaleString(LOCALE)}\` (\`${inText}\`) with id \`${scheduled.id}\``,
         ephemeral: true,
-        components: [new ActionRowBuilder()
+        components: [new ActionRowBuilder<ButtonBuilder>()
             .addComponents(
                 new ButtonBuilder()
                     .setCustomId(`delete-scheduled#${scheduled.id}`)
                     .setLabel(`Undo`)
                     .setStyle(ButtonStyle.Secondary),
-            ) as any],
+            )],
     });
 }
 
