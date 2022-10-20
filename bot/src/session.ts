@@ -1,7 +1,7 @@
 import { Message } from 'discord.js';
 import { rename } from 'fs/promises';
 import { Page } from 'puppeteer';
-import { AUDIO_BIT_RATE, HEIGHT, RECORDINGS_PATH, VIDEO_CRF, WIDTH } from "./config";
+import { AUDIO_BIT_RATE, FRAMERATE, HEIGHT, RECORDINGS_PATH, VIDEO_CRF, WIDTH } from "./config";
 import { ScheduledRecording } from "./db";
 import { BROWSER, DISCORD } from "./main";
 import messages from './messages';
@@ -89,7 +89,7 @@ export default class Session {
         const audioPath = `${RECORDINGS_PATH}/.current-audio-${this.sessionId}.m4a`;
 
         const audioRecording = spawn(['ffmpeg', '-f', 'pulse', '-i', 'auto_null.monitor', '-y', audioPath],)
-        const videoRecording = spawn(['ffmpeg', '-f', 'x11grab', '-framerate', '4', '-r', '4', '-video_size', `${WIDTH}x${HEIGHT}`, '-i', ':1.0', '-c:v', 'libx264', '-preset', 'superfast', '-pix_fmt', 'yuv420p', '-y', videoPath],)
+        const videoRecording = spawn(['ffmpeg', '-f', 'x11grab', '-framerate', FRAMERATE, '-r', FRAMERATE, '-video_size', `${WIDTH}x${HEIGHT}`, '-i', ':1.0', '-c:v', 'libx264', '-preset', 'superfast', '-pix_fmt', 'yuv420p', '-y', videoPath],)
 
         this.recording = {
             status: 'running',
@@ -121,7 +121,7 @@ export default class Session {
 
         await sleep(2000);
         const merger = spawn(['ffmpeg',
-            '-r', '4',
+            '-r', FRAMERATE,
             '-i', this.recording.videoPath,
             '-i', this.recording.audioPath,
             '-c:v', 'libx264',
