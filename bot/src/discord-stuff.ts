@@ -166,11 +166,20 @@ const handleScreenshotRequest = async (interaction: ChatInputCommandInteraction<
 const handleRecordRequest = async (interaction: ChatInputCommandInteraction<CacheType>) => {
     await interaction.deferReply({ ephemeral: true })
 
-    const url = interaction.options.getString('link')
+    let url = interaction.options.getString('link')
     const name = interaction.options.getString('name', false)?.replace(/@/g, '') ?? null
     const whenString = interaction.options.getString('when') ?? ''
     const date = new Date(whenString === 'now' ? (Date.now() + 1_100) : whenString)
 
+    try {
+        url = new URL(url).href
+    } catch (e) {
+        await interaction.followUp({
+            content: 'This url is invalid',
+            ephemeral: true
+        })
+        return
+    }
     if (isNaN(date.getTime())) {
         await interaction.followUp({
             content: 'This date is invalid',
