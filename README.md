@@ -17,6 +17,7 @@ RECORDINGS_PATH=/where/to/store/recordings docker-compose up --build
 |             WIDTH             |    `1280`     |                                               width of the recording in pixels                                               |
 |            HEIGHT             |     `720`     |                                              height of the recording in pixels                                               |
 |              CRF              |     `38`      |                    determines the quality of video, 1-51, 1 means high quality, 51 means small file size                     |
+|        AUDIO_BIT_RATE         |     `32`      |       determines the quality of audio in thousands, 48 is standard for most microphones, lower means smaller file size       |
 |          WEBEX_NAME           |   `Wojtek`    |                                          name which to type when webex asks for it                                           |
 |          WEBEX_MAIL           |               |                                          mail which to type when webex asks for it                                           |
 | MAX_MEETING_DURATION_MINUTES  |     `90`      |                                duration after a recording will always be stopped, in minutes                                 |

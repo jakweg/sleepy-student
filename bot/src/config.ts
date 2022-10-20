@@ -9,6 +9,7 @@ export const LOCALE = process.env.LOCALE || 'en'
 export const WIDTH = parseInt(process.env.WIDTH!, 10) || 1280
 export const HEIGHT = parseInt(process.env.HEIGHT!, 10) || 720
 export const VIDEO_CRF = `${parseInt(process.env.VIDEO_CRF!, 10) || 38}`
+export const AUDIO_BIT_RATE = `${parseInt(process.env.AUDIO_BIT_RATE!, 10) || 32}`
 export const SCHEDULER_INTERVAL_MS = parseInt(process.env.SCHEDULER_INTERVAL_MS!, 10) || 60_000
 export const ALLOWED_CHANNELS = Object.freeze((process.env.ALLOWED_CHANNELS || '').split(',').map(e => e.trim()))
 export const WEBEX_NAME = process.env.WEBEX_NAME || 'Wojtek'
@@ -27,6 +28,7 @@ console.log(`Using config:
     WIDTH=${WIDTH}
     HEIGHT=${HEIGHT}
     CRF=${VIDEO_CRF}
+    AUDIO_BIT_RATE=${AUDIO_BIT_RATE}
     WEBEX_NAME=${WEBEX_NAME}
     WEBEX_MAIL=${WEBEX_MAIL}
     MAX_MEETING_DURATION_MINUTES=${MAX_MEETING_DURATION_MINUTES}

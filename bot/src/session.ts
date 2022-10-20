@@ -1,7 +1,7 @@
 import { Message } from 'discord.js';
 import { rename } from 'fs/promises';
 import { Page } from 'puppeteer';
-import { HEIGHT, RECORDINGS_PATH, VIDEO_CRF, WIDTH } from "./config";
+import { AUDIO_BIT_RATE, HEIGHT, RECORDINGS_PATH, VIDEO_CRF, WIDTH } from "./config";
 import { ScheduledRecording } from "./db";
 import { BROWSER, DISCORD } from "./main";
 import messages from './messages';
@@ -128,7 +128,7 @@ export default class Session {
             '-crf', VIDEO_CRF,
             '-c:a', 'aac',
             '-abr', '1',
-            '-b:a', '32k',
+            '-b:a', `${AUDIO_BIT_RATE}k`,
             '-ac', '1',
             TEMPORARY_MERGED_PATH, '-y',])
 
