@@ -1,4 +1,4 @@
-import { Page } from "puppeteer"
+import { ElementHandle, Page } from "puppeteer"
 import { RECORDINGS_PATH, WEBEX_MAIL, WEBEX_NAME } from "./config"
 import { WebexSession } from "./session"
 import { sleep } from "./utils"
@@ -42,7 +42,18 @@ export const randomizeLettersCase = (text: string, upperProbability: number = 0.
     return text.split('').map(e => Math.random() < upperProbability ? e.toLocaleUpperCase() : e.toLocaleLowerCase()).join('')
 }
 
-export const fillCaptchaAndJoin = async (session: WebexSession, captcha: string | null,) => {
+const clearInput = async (input: ElementHandle<HTMLInputElement>) => {
+    const content = await input.evaluate(element => (element).value, input)
+    if (typeof content === 'string') {
+        const size = content.length;
+        for (let i = 0; i < size; i++) {
+            await sleep(100)
+            await input.press('Backspace');
+        }
+    }
+}
+
+export const fillCaptchaAndJoin = async (session: WebexSession, captcha: string | null,): Promise<{ isMeetingStopped: () => Promise<boolean> } | Buffer> => {
     session.assertActive()
     const page = session.page
     let frameIndex = (await Promise.all(page.frames().map(e => e.$('#guest_next-btn')))).findIndex(e => e)
@@ -50,15 +61,13 @@ export const fillCaptchaAndJoin = async (session: WebexSession, captcha: string 
     if (!frame) throw new Error('missing inputs frame')
 
     session.assertActive()
-    const results = await frame.$$('#meetingSimpleContainer input')
+    const results = await frame.$$('#meetingSimpleContainer input') as ElementHandle<HTMLInputElement>[]
     if (!results) throw new Error('missing inputs')
 
     await page.focus('body')
     await sleep(300)
     const [name, mail, characters] = results
-    await name.evaluate(element => (element as any).value = '')
-    await name.click({ clickCount: 3 });
-    await name.press('Backspace');
+    await clearInput(name)
     for (const c of randomizeLettersCase(WEBEX_NAME)) {
         await sleep(Math.random() * 300 + 300)
         await name.type(c)
@@ -66,9 +75,7 @@ export const fillCaptchaAndJoin = async (session: WebexSession, captcha: string 
 
     session.assertActive()
     await sleep(Math.random() * 500 + 100)
-    await mail.evaluate(element => (element as any).value = '')
-    await mail.click({ clickCount: 3 });
-    await mail.press('Backspace');
+    await clearInput(mail)
 
     for (const c of WEBEX_MAIL) {
         await sleep(Math.random() * 300 + 300)
@@ -76,9 +83,7 @@ export const fillCaptchaAndJoin = async (session: WebexSession, captcha: string 
     }
 
     if (characters && captcha) {
-        await characters.evaluate(element => (element as any).value = '')
-        await characters.click({ clickCount: 3 });
-        await characters.press('Backspace');
+        await clearInput(characters)
         await sleep(Math.random() * 500 + 100)
         for (const c of captcha) {
             await sleep(Math.random() * 300 + 300)
@@ -88,11 +93,25 @@ export const fillCaptchaAndJoin = async (session: WebexSession, captcha: string 
     await sleep(300)
     session.assertActive()
     await frame.click('#guest_next-btn')
+    const parentFrame = frame
 
     for (let i = 0; i < 20; ++i) {
         frameIndex = (await Promise.all(page.frames().map(e => e.$('[data-doi="MEETING:JOIN_MEETING:MEETSIMPLE_INTERSTITIAL"]')))).findIndex(e => e)
         frame = page.frames()[frameIndex]
         if (frame) break
+
+        if (parentFrame.$('#guest_next-btn[aria-disabled="true"]')) {
+            const img = (await Promise.all((page.frames()).map(e => e.$('#verificationImage')))).find(e => e)
+            if (img) {
+                await sleep(3000);
+                try {
+                    return await img.screenshot({ captureBeyondViewport: true, type: 'png' }) as Buffer
+                } catch (e) {
+                    // ignore
+                }
+            }
+        }
+
         await sleep(1000)
     }
     session.assertActive()

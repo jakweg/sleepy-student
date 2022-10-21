@@ -68,7 +68,6 @@ const handleSolveButtonClicked = async (interaction: ButtonInteraction<CacheType
 
     await session.do(async () => {
         if (session.isWaitingForCaptcha()) {
-            session.disableWaitingForCaptcha()
             advanceWebexAndJoin(session, captcha)
         }
     })
@@ -495,8 +494,16 @@ export const launch = async () => {
 export async function advanceWebexAndJoin(
     session: WebexSession,
     captcha: string | null,) {
+    if (!session.isWaitingForCaptcha()) return
+    session.disableWaitingForCaptcha()
 
     const runningWebex = await fillCaptchaAndJoin(session, captcha)
+    if (Buffer.isBuffer(runningWebex)) {
+        session.assertActive()
+        session.enableWaitingForCaptcha(runningWebex)
+        return
+    }
+
     session.assertActive()
     await session.startRecording()
     session.setRecordingTimeout(MAX_MEETING_DURATION_MINUTES)
