@@ -232,7 +232,7 @@ const handleRecordRequest = async (interaction: ChatInputCommandInteraction<Cach
     })
 
     await interaction.followUp({
-        content: `Scheduled recording \`${name || '(unnamed)'}\` for \`${date.toLocaleString(LOCALE)}\` (\`${inText}\`) with id \`${scheduled.id}\``,
+        content: `Scheduled recording \`${name || '(unnamed)'}\` for \`${date.toLocaleString(LOCALE)}\` (\`${inText}\`)`,
         ephemeral: true,
         components: [new ActionRowBuilder<ButtonBuilder>()
             .addComponents(
@@ -328,7 +328,7 @@ const handleNextRecordingsRequest = async (interaction: ChatInputCommandInteract
 
     const all = getAll();
     if (all.length > 0) {
-        const detailsString = all.map(e => `\`${e.id}\` ${e.name || 'unnamed'} (${e.type}) \`${new Date(e.timestamp).toLocaleString(LOCALE)}\` `)
+        const detailsString = all.map(e => `\`${new Date(e.timestamp).toLocaleString(LOCALE)}\` ${e.name || 'unnamed'} (${e.type})`)
 
         await interaction.reply({
             content: `Scheduled recordings: (${detailsString.length})\n${detailsString.join('\n')}`,

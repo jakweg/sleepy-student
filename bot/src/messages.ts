@@ -5,7 +5,7 @@ import { RecordingState } from "./session";
 
 const fatalError = (entry: ScheduledRecording, error: string): MessageCreateOptions => {
     return {
-        content: `Tried joining ${entry.type} \`${entry.id}\`, but failed: ${error}`,
+        content: `Tried joining ${entry.type} but failed: ${error}`,
         components: [new ActionRowBuilder()
             .addComponents(new ButtonBuilder()
                 .setURL(entry.url)
@@ -20,9 +20,9 @@ const fromState = (entry: ScheduledRecording, sessionId: string, recording: Reco
     const buttons: ButtonBuilder[] = []
 
     if (!recording) {
-        content += `Hey <@${entry.scheduledBy}>! Joining ${entry.type} for scheduled meeting ${entry.name || 'unnamed'} (\`${entry.id}\`)\n`
+        content += `Hey <@${entry.scheduledBy}>! Joining ${entry.type} for scheduled meeting ${entry.name || 'unnamed'}\n`
     } else if (recording.status === 'running') {
-        content += `I'm currently recording ${entry.name || 'unnamed'} (\`${entry.id}\`)\n`
+        content += `I'm currently recording ${entry.name || 'unnamed'}\n`
     } else {
         content += `Meeting \`${entry.name || 'unnamed'}\` has finished\n`
     }
