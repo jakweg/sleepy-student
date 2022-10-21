@@ -1,6 +1,6 @@
 import { LANGUAGE } from './config'
 
-const supportedLanguages = ['en-US']
+const supportedLanguages = ['en-US', 'pl']
 if (!supportedLanguages.includes(LANGUAGE))
     throw new Error('Language not supported ' + LANGUAGE)
 
