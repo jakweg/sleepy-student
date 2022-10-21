@@ -87,10 +87,10 @@ const fromState = (entry: ScheduledRecording, sessionId: string, recording: Reco
 
     return {
         content: contentLines.join('\n'),
-        components: [
-            buttons.length && new ActionRowBuilder<ButtonBuilder>()
+        components: buttons.length > 0 ? [
+            new ActionRowBuilder<ButtonBuilder>()
                 .addComponents(...buttons),
-        ].filter(e => typeof e !== 'boolean'),
+        ] : [],
     }
 }
 

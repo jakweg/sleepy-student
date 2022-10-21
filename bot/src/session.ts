@@ -63,7 +63,7 @@ export default class Session {
     }
 
     private updateMessage() {
-        this.message.edit(messages.fromState(this.entry, this.sessionId, this.recording)).catch(e => void (e))
+        this.message.edit(messages.fromState(this.entry, this.sessionId, this.recording)).catch(e => console.error('Failed to update message', e.message))
     }
 
     public setFatalErrorAndStop(message: string): void {
