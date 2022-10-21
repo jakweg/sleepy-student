@@ -1,6 +1,6 @@
 {
     "scripts": {
-        "build": "esbuild --bundle --outdir=dist --external:puppeteer --external:discord.js --external:dotenv --format=esm --platform=node src/main.ts",
+        "build": "esbuild --bundle --outdir=dist --external:puppeteer --external:discord.js --external:dotenv --format=esm --platform=node src/main.ts src/lang/*",
         "start": "node dist/main.js"
     },
     "type": "module",

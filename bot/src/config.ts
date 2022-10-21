@@ -6,6 +6,7 @@ export const RECORDINGS_PATH = process.env.RECORDINGS_PATH || '/recordings'
 export const DB_PATH = process.env.DB_PATH || '/persistent/db.json'
 export const TIME_ZONE = process.env.TIME_ZONE || 'GMT'
 export const LOCALE = process.env.LOCALE || 'en'
+export const LANGUAGE = process.env.LANGUAGE || 'en-US'
 export const WIDTH = parseInt(process.env.WIDTH!, 10) || 1280
 export const HEIGHT = parseInt(process.env.HEIGHT!, 10) || 720
 export const VIDEO_CRF = `${parseInt(process.env.VIDEO_CRF!, 10) || 38}`
@@ -26,6 +27,7 @@ process.env.TZ = TIME_ZONE
 console.log(`Using config:
     TIME_ZONE=${TIME_ZONE}
     LOCALE=${LOCALE}
+    LANGUAGE=${LANGUAGE}
     WIDTH=${WIDTH}
     HEIGHT=${HEIGHT}
     CRF=${VIDEO_CRF}

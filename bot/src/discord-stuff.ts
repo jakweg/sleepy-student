@@ -1,14 +1,15 @@
 import { ActionRowBuilder, AttachmentBuilder, AutocompleteInteraction, ButtonBuilder, ButtonInteraction, ButtonStyle, CacheType, ChatInputCommandInteraction, Client, Interaction, ModalBuilder, REST, Routes, SlashCommandBuilder, SlashCommandStringOption, TextInputBuilder, TextInputStyle } from "discord.js";
-import { ALLOWED_CHANNELS, LOCALE, MAX_MEETING_DURATION_MINUTES } from "./config";
+import { ALLOWED_CHANNELS, LANGUAGE, MAX_MEETING_DURATION_MINUTES } from "./config";
 import { currentState, updateState } from "./current-state";
 import { deleteById, findById, findInPastIfNotUsedById, findInPastIfNotUsedByIdAndMarkUsed, getAll, scheduleNewRecording } from "./db";
+import intl, { en } from "./intl";
 import { fillCaptchaAndJoin } from "./logic-webex";
 import Session, { WebexSession } from "./session";
 
 const verifyValidSession = async (interaction: ButtonInteraction<CacheType>, sessionId: string): Promise<Session> => {
     if (!currentState.session || sessionId !== currentState.session?.sessionId) {
         await interaction.reply({
-            content: `You should have not clicked this button`,
+            content: intl.OUTDATED_BUTTON_CLICKED_MESSAGE,
             ephemeral: true,
         })
         return await new Promise(resolve => void (resolve))
@@ -24,17 +25,17 @@ const handleSolveButtonClicked = async (interaction: ButtonInteraction<CacheType
         return
     }
     if (!session.isWaitingForCaptcha()) {
-        interaction.reply({ content: 'Too late', ephemeral: true, }).catch(e => void (e))
+        interaction.reply({ content: intl.CAPTCHA_TOO_LATE_SUBMITTED, ephemeral: true, }).catch(e => void (e))
         return
     }
 
     const modal = new ModalBuilder()
         .setCustomId(`captcha-modal#${sessionId}`)
-        .setTitle('Solve the captcha');
+        .setTitle(intl.CAPTCHA_MODAL_TITLE);
 
     const resultInput = new TextInputBuilder()
         .setCustomId('captcha-result')
-        .setLabel("What does it say?")
+        .setLabel(intl.CAPTCHA_MODAL_INPUT_TITLE)
         .setStyle(TextInputStyle.Short)
         .setMinLength(6)
         .setMaxLength(6)
@@ -58,13 +59,13 @@ const handleSolveButtonClicked = async (interaction: ButtonInteraction<CacheType
     }
 
     if (!session.isWaitingForCaptcha()) {
-        interaction.reply({ content: 'Too late', ephemeral: true, }).catch(e => void (e))
+        interaction.reply({ content: intl.CAPTCHA_TOO_LATE_SUBMITTED, ephemeral: true, }).catch(e => void (e))
         return
     }
 
     await interaction.message?.delete?.()?.catch(e => void (e))
 
-    result.reply({ ephemeral: true, content: 'Thanks, it really means a lot for me' })?.catch(e => void (e))
+    result.reply({ ephemeral: true, content: intl.CAPTCHA_SUBMIT_CONFIRMATION })?.catch(e => void (e))
 
     await session.do(async () => {
         if (session.isWaitingForCaptcha()) {
@@ -76,29 +77,23 @@ const handleSolveButtonClicked = async (interaction: ButtonInteraction<CacheType
 const handleStopRecordingClicked = async (interaction: ButtonInteraction | ChatInputCommandInteraction, sessionId: string | null) => {
     if (!currentState.session) {
         await interaction.reply({
-            content: `There is no recording going on`,
+            content: intl.STOP_FAILED_NO_RECORDING,
             ephemeral: true,
         })
         return
     }
-    // await interaction.showModal(new ModalBuilder()
-    //     .setCustomId(`captcha-modal#${sessionId}`)
-    //     .setTitle('Solve the captcha'))
-
-    // const modalResult = await interaction.awaitModalSubmit({ time: 0 })
-    // await handleStopRecordingConfirmedClicked(modalResult, sessionId)
 
     await interaction.reply({
-        content: `**Really stop the recording?**`,
+        content: intl.STOP_RECORDING_CONFIRM_TITLE,
         components: [new ActionRowBuilder<ButtonBuilder>()
             .addComponents(
                 new ButtonBuilder()
                     .setCustomId(`stop-recording-confirmed#${sessionId ?? currentState.session?.sessionId ?? 'any'}`)
-                    .setLabel(`YES`)
+                    .setLabel(intl.YES)
                     .setStyle(ButtonStyle.Danger),
                 new ButtonBuilder()
                     .setCustomId(`stop-recording-cancel#any`)
-                    .setLabel(`Maybe no`)
+                    .setLabel(intl.NO)
                     .setStyle(ButtonStyle.Secondary)
             )],
         ephemeral: true,
@@ -106,7 +101,7 @@ const handleStopRecordingClicked = async (interaction: ButtonInteraction | ChatI
 }
 
 const handleStopRecordingCancelClicked = async (interaction: ButtonInteraction | ChatInputCommandInteraction) => {
-    await interaction.reply({ content: 'Cancelled!', ephemeral: true })
+    await interaction.reply({ content: intl.STOP_RECORDING_CANCELLED, ephemeral: true })
 }
 
 
@@ -114,7 +109,7 @@ const handleStopRecordingConfirmedClicked = async (interaction: ButtonInteractio
     if (currentState.session) {
         if (sessionId !== null && currentState.session.sessionId !== sessionId) {
             await interaction.reply({
-                content: `Outdated button`,
+                content: intl.OUTDATED_BUTTON_CLICKED_MESSAGE,
                 ephemeral: true,
             })
 
@@ -124,7 +119,7 @@ const handleStopRecordingConfirmedClicked = async (interaction: ButtonInteractio
             currentState.session.stopRecordingByUser(interaction.user.id)
 
             await interaction.reply({
-                content: `Stopped by your command`,
+                content: intl.STOP_RECORDING_EXECUTED,
                 ephemeral: true,
             })
 
@@ -134,7 +129,7 @@ const handleStopRecordingConfirmedClicked = async (interaction: ButtonInteractio
     }
 
     await interaction.reply({
-        content: `I think I wasn't recording, but might be wrong`,
+        content: intl.STOP_FAILED_NO_RECORDING,
         ephemeral: true,
     })
 }
@@ -144,7 +139,7 @@ const handleScreenshotRequest = async (interaction: ChatInputCommandInteraction<
     const page = currentState.session?.page
     if (!page) {
         await interaction.followUp({
-            content: 'No session is running',
+            content: intl.STOP_FAILED_NO_RECORDING,
             ephemeral: true
         });
         return
@@ -156,7 +151,7 @@ const handleScreenshotRequest = async (interaction: ChatInputCommandInteraction<
     const attachment = new AttachmentBuilder(screenshotData);
 
     await interaction.followUp({
-        content: 'Here you are',
+        content: intl.SCREENSHOT_DELIVERED_TEXT,
         files: [attachment],
         ephemeral: true
     });
@@ -174,21 +169,21 @@ const handleRecordRequest = async (interaction: ChatInputCommandInteraction<Cach
         url = new URL(url).href
     } catch (e) {
         await interaction.followUp({
-            content: 'This url is invalid',
+            content: intl.RECORD_COMMAND_INVALID_URL,
             ephemeral: true
         })
         return
     }
     if (isNaN(date.getTime())) {
         await interaction.followUp({
-            content: 'This date is invalid',
+            content: intl.RECORD_COMMAND_INVALID_DATE,
             ephemeral: true
         })
         return
     }
     if (date.getTime() < Date.now()) {
         await interaction.followUp({
-            content: 'This date is in the past',
+            content: intl.RECORD_COMMAND_DATE_IN_PAST,
             ephemeral: true
         })
         return
@@ -197,7 +192,7 @@ const handleRecordRequest = async (interaction: ChatInputCommandInteraction<Cach
     const type = (url?.includes('webex') ? 'webex' : (url?.includes('teams') ? 'teams' : 'invalid'))
     if (type === 'invalid') {
         await interaction.followUp({
-            content: 'Couldn\'t determine platform',
+            content: intl.RECORD_COMMAND_INVALID_PLATFORM,
             ephemeral: true
         })
         return
@@ -220,7 +215,7 @@ const handleRecordRequest = async (interaction: ChatInputCommandInteraction<Cach
     else if (diff.totalMinutes > 0)
         inText += rtf.format(diff.totalMinutes, 'minute')
     else
-        inText += 'soon'
+        inText += intl.RECORD_COMMAND_SOON
 
     const scheduled = await scheduleNewRecording({
         url: url!,
@@ -232,13 +227,13 @@ const handleRecordRequest = async (interaction: ChatInputCommandInteraction<Cach
     })
 
     await interaction.followUp({
-        content: `Scheduled recording \`${name || '(unnamed)'}\` for \`${date.toLocaleString(LOCALE)}\` (\`${inText}\`)`,
+        content: intl.recordingCommandAccepted(name, date, inText),
         ephemeral: true,
         components: [new ActionRowBuilder<ButtonBuilder>()
             .addComponents(
                 new ButtonBuilder()
                     .setCustomId(`delete-scheduled#${scheduled.id}`)
-                    .setLabel(`Undo`)
+                    .setLabel(intl.UNDO)
                     .setStyle(ButtonStyle.Secondary),
             )],
     });
@@ -248,14 +243,14 @@ const handleDeleteScheduledClicked = async (interaction: ButtonInteraction<Cache
     const entry = await deleteById(id || '')
     if (!entry) {
         await interaction.reply({
-            content: `Not found meeting with this ID`,
+            content: intl.DELETE_COMMAND_NOT_FOUND,
             ephemeral: true
         })
         return
     }
 
     await interaction.reply({
-        content: `Deleted scheduled ${entry.name || 'unnamed'} for day ${new Date(entry.timestamp).toLocaleString(LOCALE)}`,
+        content: intl.deleteCommandConfirmation(entry.name, entry.timestamp),
         ephemeral: true
     });
 }
@@ -273,14 +268,14 @@ const handleScheduleNextWeek = async (interaction: ButtonInteraction<CacheType>,
 
     await interaction.showModal(new ModalBuilder()
         .setCustomId(`reschedule-modal#any`)
-        .setTitle('Reschedule it for next week?').addComponents(
+        .setTitle(intl.SCHEDULE_NEXT_WEEK_COMMAND_MODAL_TITLE).addComponents(
             new ActionRowBuilder<TextInputBuilder>().addComponents(new TextInputBuilder()
                 .setCustomId('new-name')
-                .setLabel("New name for it?")
+                .setLabel(intl.SCHEDULE_NEXT_WEEK_COMMAND_NAME_INPUT_PROMPT)
                 .setStyle(TextInputStyle.Short)
                 .setMinLength(1)
                 .setMaxLength(60)
-                .setPlaceholder('Meeting name')
+                .setPlaceholder(intl.SCHEDULE_NEXT_WEEK_COMMAND_NAME_INPUT_PLACEHOLDER)
                 .setRequired(true)
                 .setValue(oldEntry.name)),
         ))
@@ -300,7 +295,7 @@ const handleScheduleNextWeek = async (interaction: ButtonInteraction<CacheType>,
         })
 
         await result.reply({
-            content: `Scheduled ${newScheduled.name || 'unnamed'} for day ${new Date(newScheduled.timestamp).toLocaleString(LOCALE)}`,
+            content: intl.scheduleNextWeekCommandConfirmation(newScheduled.name, newScheduled.timestamp),
             ephemeral: true
         });
 
@@ -311,7 +306,7 @@ const handleScheduleNextWeek = async (interaction: ButtonInteraction<CacheType>,
         const scheduleButton = row.components.find(e => (e as any)['custom_id']?.startsWith('schedule-next-week#'))
         if (scheduleButton) {
             scheduleButton.disabled = true
-            scheduleButton['label'] = 'Scheduled for next week'
+            scheduleButton['label'] = intl.SCHEDULE_NEXT_WEEK_COMMAND_SCHEDULED_BUTTON_DISABLED
         }
         originalMessage.edit({ components: [row] }).catch(e => void (e))
 
@@ -328,16 +323,16 @@ const handleNextRecordingsRequest = async (interaction: ChatInputCommandInteract
 
     const all = getAll();
     if (all.length > 0) {
-        const detailsString = all.map(e => `\`${new Date(e.timestamp).toLocaleString(LOCALE)}\` ${e.name || 'unnamed'} (${e.type})`)
+        const detailsString = all.map(e => intl.commandUpcomingLineFormat(e.name, e.type, e.timestamp))
 
         await interaction.reply({
-            content: `Scheduled recordings: (${detailsString.length})\n${detailsString.join('\n')}`,
+            content: `${intl.commandUpcomingHeaderLine(all.length)}\n${detailsString.join('\n')}`,
             allowedMentions: { users: [], parse: [] },
             ephemeral: true
         });
     } else {
         await interaction.reply({
-            content: `No upcoming recordings`,
+            content: intl.COMMAND_UPCOMING_NONE_FOUND,
             ephemeral: true
         });
     }
@@ -356,21 +351,16 @@ const handleDetailsRequest = async (interaction: ChatInputCommandInteraction<Cac
     }
 
     await interaction.reply({
-        content: `Meeting details:
-Name: ${entry.name || 'unnamed'}
-Date: ${new Date(entry.timestamp).toLocaleString(LOCALE)}
-Link: \`${entry.url}\`
-Scheduled by <@${entry.scheduledBy}> in <#${entry.channel}> on ${new Date(entry.creationTimestamp).toLocaleString(LOCALE)}
-`,
+        content: intl.meetingDetails(entry.name, entry.timestamp, entry.url, entry.scheduledBy, entry.channel, entry.creationTimestamp),
         components: [new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()
                     .setCustomId(`delete-scheduled#${entry.id}`)
-                    .setLabel(`Delete it`)
+                    .setLabel(intl.MEETING_DETAILS_DELETE_IT)
                     .setStyle(ButtonStyle.Danger),
                 new ButtonBuilder()
                     .setURL(entry.url)
-                    .setLabel(`Enter meeting yourself`)
+                    .setLabel(intl.ENTER_MEETING_YOURSELF)
                     .setStyle(ButtonStyle.Link),
             ) as any],
         allowedMentions: { users: [] },
@@ -392,7 +382,7 @@ const handleInteraction = async (interaction: Interaction<CacheType>) => {
     if (!ALLOWED_CHANNELS.includes(interaction.channelId!)) {
         console.warn('Not permitted invocation in channel', interaction.channelId, 'by', interaction.user?.username, interaction.user?.id);
         if (interaction.isRepliable())
-            interaction.reply({ content: `This channel (${interaction.channelId}) is not allowed to use this bot`, ephemeral: true })
+            interaction.reply({ content: intl.channelNotPermitted(interaction.channelId), ephemeral: true })
         return
     }
 
@@ -431,37 +421,54 @@ const createCommands = () => {
     return [
         new SlashCommandBuilder()
             .setName('record')
-            .setDescription('Record session')
+            .setNameLocalizations({ [LANGUAGE]: intl.COMMAND_RECORD_NAME })
+            .setDescriptionLocalizations({ [LANGUAGE]: intl.COMMAND_RECORD_DESCRIPTION })
+            .setDescription(en.COMMAND_RECORD_DESCRIPTION)
             .addStringOption(new SlashCommandStringOption()
                 .setName('link')
-                .setDescription('Link to join')
+                .setNameLocalizations({ [LANGUAGE]: intl.COMMAND_RECORD_LINK_NAME })
+                .setDescription(en.COMMAND_RECORD_LINK_DESCRIPTION)
+                .setDescriptionLocalizations({ [LANGUAGE]: intl.COMMAND_RECORD_LINK_DESCRIPTION })
                 .setRequired(true))
             .addStringOption(new SlashCommandStringOption()
                 .setName('when')
-                .setDescription('When to join yyyy.MM.dd hh:mm:ss or "now"')
+                .setNameLocalizations({ [LANGUAGE]: intl.COMMAND_RECORD_DATE_NAME })
+                .setDescription(en.COMMAND_RECORD_DATE_DESCRIPTION)
+                .setDescriptionLocalizations({ [LANGUAGE]: intl.COMMAND_RECORD_DATE_DESCRIPTION })
                 .setRequired(true))
             .addStringOption(new SlashCommandStringOption()
                 .setName('name')
-                .setDescription('Name this meeting')
+                .setNameLocalizations({ [LANGUAGE]: intl.COMMAND_RECORD_NAME_NAME })
+                .setDescription(en.COMMAND_RECORD_NAME_DESCRIPTION)
+                .setDescriptionLocalizations({ [LANGUAGE]: intl.COMMAND_RECORD_NAME_DESCRIPTION })
                 .setMaxLength(60)
                 .setRequired(false)),
         new SlashCommandBuilder()
             .setName('stop')
-            .setDescription('Immediately stop current recording'),
+            .setNameLocalizations({ [LANGUAGE]: intl.COMMAND_STOP_NAME })
+            .setDescription(en.COMMAND_STOP_DESCRIPTION)
+            .setDescriptionLocalizations({ [LANGUAGE]: intl.COMMAND_STOP_DESCRIPTION }),
         new SlashCommandBuilder()
             .setName('upcoming')
-            .setDescription('View upcoming scheduled recordings'),
+            .setNameLocalizations({ [LANGUAGE]: intl.COMMAND_UPCOMING_NAME })
+            .setDescription(en.COMMAND_UPCOMING_DESCRIPTION)
+            .setDescriptionLocalizations({ [LANGUAGE]: intl.COMMAND_UPCOMING_DESCRIPTION }),
         new SlashCommandBuilder()
             .setName('details')
-            .setDescription('View details of upcoming recording')
+            .setNameLocalizations({ [LANGUAGE]: intl.COMMAND_DETAILS_NAME })
+            .setDescription(en.COMMAND_DETAILS_DESCRIPTION)
+            .setDescriptionLocalizations({ [LANGUAGE]: intl.COMMAND_UPCOMING_DESCRIPTION })
             .addStringOption(new SlashCommandStringOption()
                 .setName('id')
-                .setDescription('ID of the meeting')
+                .setNameLocalizations({ [LANGUAGE]: intl.COMMAND_DETAILS_ID_NAME })
+                .setDescription(en.COMMAND_DETAILS_ID_DESCRIPTION)
+                .setDescriptionLocalizations({ [LANGUAGE]: intl.COMMAND_DETAILS_ID_DESCRIPTION })
                 .setRequired(true)
                 .setAutocomplete(true)),
         new SlashCommandBuilder()
             .setName('ss')
-            .setDescription('Takes screenshot of current page'),
+            .setDescription(en.COMMAND_SS_DESCRIPTION)
+            .setDescriptionLocalizations({ [LANGUAGE]: intl.COMMAND_SS_DESCRIPTION }),
     ]
 }
 

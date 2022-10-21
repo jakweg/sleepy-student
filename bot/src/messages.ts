@@ -1,6 +1,7 @@
 import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle, MessageCreateOptions } from "discord.js";
 import { RECORDING_READY_URL_FORMAT } from "./config";
 import { ScheduledRecording } from "./db";
+import intl from "./intl";
 import { RecordingState } from "./session";
 
 const fatalError = (entry: ScheduledRecording, error: string): MessageCreateOptions => {
@@ -9,39 +10,39 @@ const fatalError = (entry: ScheduledRecording, error: string): MessageCreateOpti
         components: [new ActionRowBuilder()
             .addComponents(new ButtonBuilder()
                 .setURL(entry.url)
-                .setLabel(`Enter the meeting yourself`)
+                .setLabel(intl.ENTER_MEETING_YOURSELF)
                 .setStyle(ButtonStyle.Link)) as any
         ],
     }
 }
 
 const fromState = (entry: ScheduledRecording, sessionId: string, recording: RecordingState): MessageCreateOptions => {
-    let content = ``
+    let contentLines: string[] = []
     const buttons: ButtonBuilder[] = []
 
     if (!recording) {
-        content += `Hey <@${entry.scheduledBy}>! Joining ${entry.type} for scheduled meeting ${entry.name || 'unnamed'}\n`
+        contentLines.push(intl.joiningMessage(entry.scheduledBy, entry.type, entry.name))
     } else if (recording.status === 'running') {
-        content += `I'm currently recording ${entry.name || 'unnamed'}\n`
+        contentLines.push(intl.currentlyRecording(entry.name))
     } else {
-        content += `Meeting \`${entry.name || 'unnamed'}\` has finished\n`
+        contentLines.push(intl.recordingFinished(entry.name))
     }
 
     if (!recording || recording.status === 'running') {
         buttons.push(new ButtonBuilder()
             .setURL(entry.url)
-            .setLabel(`Enter the meeting yourself`)
+            .setLabel(intl.ENTER_MEETING_YOURSELF)
             .setStyle(ButtonStyle.Link))
     }
 
     if (!recording && entry.type === 'webex')
-        content += 'May need your help with captcha\n'
+        contentLines.push(intl.MAY_NEED_YOUR_HELP_WITH_CAPTCHA)
 
     if (recording && recording.status === 'running') {
         buttons.push(
             new ButtonBuilder()
                 .setCustomId(`stop-recording#${sessionId}`)
-                .setLabel(`Stop the recording`)
+                .setLabel(intl.STOP_RECORDING)
                 .setStyle(ButtonStyle.Danger)
         )
     }
@@ -49,30 +50,30 @@ const fromState = (entry: ScheduledRecording, sessionId: string, recording: Reco
     if (recording && recording.stopped && recording.status !== 'running') {
         switch (recording.stopped.type) {
             case 'by':
-                content += `Recording has been stopped by <@${recording.stopped.by}>\n`
+                contentLines.push(intl.recordingFinishedBy(recording.stopped.by))
                 break
             case 'timeout':
-                content += `Recording has been stopped automatically after ${recording.stopped.afterMinutes} minutes\n`
+                contentLines.push(intl.recordingFinishedTimeout(recording.stopped.afterMinutes))
                 break
             case 'meeting-closed':
-                content += `Recording was stopped, because meeting also closed\n`
+                contentLines.push(intl.recordingFinishedClosed())
                 break
             default:
-                content += `Recording was stopped for no reason\n`
+                contentLines.push(intl.recordingFinishedOther())
                 break
         }
     }
 
     if (recording && recording.stopped && recording.status === 'stopped') {
-        content += `File will be available soon, as it's now being processed\n`
+        contentLines.push(intl.PROCESSING_RECORDING)
     }
 
     if (recording && recording.readyFilename && recording.status === 'ready') {
-        content += 'You can watch the recording now'
+        contentLines.push(intl.RECORDING_READY)
         if (RECORDING_READY_URL_FORMAT)
             buttons.push(new ButtonBuilder()
                 .setURL(`${RECORDING_READY_URL_FORMAT.replace('%name%', encodeURIComponent(recording.readyFilename))}`)
-                .setLabel(`Watch the recording`)
+                .setLabel(intl.WATCH_RECORDING_BUTTON)
                 .setStyle(ButtonStyle.Link))
     }
 
@@ -80,12 +81,12 @@ const fromState = (entry: ScheduledRecording, sessionId: string, recording: Reco
     if (recording && recording.status === 'ready') {
         buttons.push(new ButtonBuilder()
             .setCustomId(`schedule-next-week#${entry.id}`)
-            .setLabel(`Schedule the same meeting next week`)
+            .setLabel(intl.SCHEDULE_NEXT_WEEK_BUTTON)
             .setStyle(ButtonStyle.Success))
     }
 
     return {
-        content,
+        content: contentLines.join('\n'),
         components: [
             buttons.length && new ActionRowBuilder<ButtonBuilder>()
                 .addComponents(...buttons),
@@ -97,13 +98,13 @@ const captcha = (sessionId: string, imageData: Buffer): MessageCreateOptions => 
     const attachment = new AttachmentBuilder(imageData)
 
     return {
-        content: 'Please anyone, help me with this!',
+        content: intl.CAPTCHA_SOLVE_REQUEST,
         files: [attachment],
         components: [new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()
                     .setCustomId(`solve-captcha-scheduled-button#${sessionId}`)
-                    .setLabel(`I'm the hero today`)
+                    .setLabel(intl.CAPTCHA_SOLVE_BUTTON)
                     .setStyle(ButtonStyle.Primary),
             ) as any],
     }

@@ -14,6 +14,7 @@ RECORDINGS_PATH=/where/to/store/recordings docker-compose up --build
 |    APPLICATION_ID    |               |                                            required, used to connect with Discord                                            |
 |      TIME_ZONE       |     `GMT`     |                                            for joining scheduled meetings on time                                            |
 |        LOCALE        |     `en`      |                                                     for dates formatting                                                     |
+|       LANGUAGE       |    `en-US`    |                                            for discord messages, supports `en-US`                                            |
 |        WIDTH         |    `1280`     |                                               width of the recording in pixels                                               |
 |        HEIGHT        |     `720`     |                                              height of the recording in pixels                                               |
 |         CRF          |     `38`      |                    determines the quality of video, 1-51, 1 means high quality, 51 means small file size                     |
