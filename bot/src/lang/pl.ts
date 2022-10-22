@@ -1,4 +1,8 @@
-import { LOCALE } from "../config"
+import { formatRelativeTime } from "../lang-utils"
+
+const LOCALE = 'pl'
+const dateTimeFormat = new Intl.DateTimeFormat(LOCALE, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })
+const relativeTimeFormat = new Intl.RelativeTimeFormat(LOCALE, { style: 'long' })
 
 export const formatMeetingName = (name: string | null) => name || 'bez nazwy'
 
@@ -52,26 +56,26 @@ export const RECORD_COMMAND_DATE_IN_PAST = `Ta data jest w przeszłości`
 export const RECORD_COMMAND_INVALID_PLATFORM = `Nie ogarniam, to webex czy teams?`
 export const RECORD_COMMAND_SOON = `wkrótce`
 
-export const recordingCommandAccepted = (name: string, date: Date, inText: string) => `Zaplanowano nagrywanie spotkania \`${formatMeetingName(name)}\` na \`${date.toLocaleString(LOCALE)}\` (\`${inText}\`)`
+export const recordingCommandAccepted = (name: string, date: Date, msDifference: number) => `Zaplanowano nagrywanie spotkania \`${formatMeetingName(name)}\` na \`${dateTimeFormat.format(date)}\` (\`${formatRelativeTime(msDifference, relativeTimeFormat)}\`)`
 
 export const DELETE_COMMAND_NOT_FOUND = `Nie znaleziono takiego`
-export const deleteCommandConfirmation = (name: string, timestamp: number) => `Usunięto zaplanowane spotkanie ${formatMeetingName(name)} na dzień ${new Date(timestamp).toLocaleString(LOCALE)}`
+export const deleteCommandConfirmation = (name: string, timestamp: number) => `Usunięto zaplanowane spotkanie ${formatMeetingName(name)} na ${dateTimeFormat.format(new Date(timestamp))}`
 
 export const SCHEDULE_NEXT_WEEK_COMMAND_MODAL_TITLE = `Wbijać za tydzień tak samo?`
 export const SCHEDULE_NEXT_WEEK_COMMAND_NAME_INPUT_PROMPT = `Jak to nowe spotkanie nazwać?`
 export const SCHEDULE_NEXT_WEEK_COMMAND_NAME_INPUT_PLACEHOLDER = `Nazwa spotkania`
 export const SCHEDULE_NEXT_WEEK_COMMAND_SCHEDULED_BUTTON_DISABLED = `Za tydzień o tej samej`
-export const scheduleNextWeekCommandConfirmation = (name: string, timestamp: number) => `Zaplanowano ${formatMeetingName(name)} na dzień ${new Date(timestamp).toLocaleString(LOCALE)}`
+export const scheduleNextWeekCommandConfirmation = (name: string, timestamp: number) => `Zaplanowano ${formatMeetingName(name)} na dzień ${dateTimeFormat.format(new Date(timestamp))}`
 
-export const commandUpcomingLineFormat = (name: string, type: string, timestamp: number) => `\`${new Date(timestamp).toLocaleString(LOCALE)}\` ${formatMeetingName(name)} (${type})`
+export const commandUpcomingLineFormat = (name: string, type: string, timestamp: number) => `\`${dateTimeFormat.format(new Date(timestamp))}\` ${formatMeetingName(name)} (${type})`
 export const commandUpcomingHeaderLine = (total: number) => `Zaplanowane spotkania do nagrania: (${total})`
 export const COMMAND_UPCOMING_NONE_FOUND = `Jeszcze nic nie zaplanowano`
 
 export const meetingDetails = (name: string, date: number, url: string, by: string, channel: string, created: number) => `Szczegóły spotkania:
 Nazwa: ${formatMeetingName(name)}
-Kiedy: ${new Date(date).toLocaleString(LOCALE)}
+Kiedy: ${dateTimeFormat.format(new Date(date))} (\`${formatRelativeTime(date - Date.now(), relativeTimeFormat)}\`)
 Link: \`${url}\`
-Dodane przez <@${by}> w <#${channel}> w dniu ${new Date(created).toLocaleString(LOCALE)}
+Dodane przez <@${by}> w <#${channel}> w dniu ${dateTimeFormat.format(new Date(created))}
 `
 export const MEETING_DETAILS_DELETE_IT = `Usuń je`
 

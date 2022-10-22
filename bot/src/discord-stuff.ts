@@ -211,23 +211,6 @@ const handleRecordRequest = async (interaction: ChatInputCommandInteraction<Cach
     }
 
     const timeDiff = date.getTime() - Date.now()
-    const diff = {
-        totalSeconds: timeDiff / 1000 | 0,
-        totalMinutes: timeDiff / 1000 / 60 | 0,
-        totalHours: timeDiff / 1000 / 60 / 60 | 0,
-        totalDays: timeDiff / 1000 / 60 / 60 / 24 | 0,
-    }
-    const rtf = new Intl.RelativeTimeFormat("en", { numeric: "always" });
-
-    let inText = ''
-    if (diff.totalDays > 0)
-        inText += rtf.format(diff.totalDays, 'day')
-    else if (diff.totalHours > 0)
-        inText += rtf.format(diff.totalHours, 'hour')
-    else if (diff.totalMinutes > 0)
-        inText += rtf.format(diff.totalMinutes, 'minute')
-    else
-        inText += intl.RECORD_COMMAND_SOON
 
     const scheduled = await scheduleNewRecording({
         url: url!,
@@ -239,7 +222,7 @@ const handleRecordRequest = async (interaction: ChatInputCommandInteraction<Cach
     })
 
     await interaction.followUp({
-        content: intl.recordingCommandAccepted(name, date, inText),
+        content: intl.recordingCommandAccepted(name, date, timeDiff),
         ephemeral: true,
         components: [new ActionRowBuilder<ButtonBuilder>()
             .addComponents(
