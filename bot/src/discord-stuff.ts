@@ -1,4 +1,5 @@
 import { ActionRowBuilder, AttachmentBuilder, AutocompleteInteraction, ButtonBuilder, ButtonInteraction, ButtonStyle, CacheType, ChatInputCommandInteraction, Client, Interaction, ModalBuilder, REST, Routes, SlashCommandBuilder, SlashCommandStringOption, TextInputBuilder, TextInputStyle } from "discord.js";
+import { readFile } from 'fs/promises';
 import { ALLOWED_CHANNELS, LANGUAGE, MAX_MEETING_DURATION_MINUTES } from "./config";
 import { currentState, updateState } from "./current-state";
 import { deleteById, findById, findInPastIfNotUsedById, findInPastIfNotUsedByIdAndMarkUsed, getAll, scheduleNewRecording } from "./db";
@@ -118,10 +119,21 @@ const handleStopRecordingConfirmedClicked = async (interaction: ButtonInteractio
         await currentState.session.do(async () => {
             currentState.session.stopRecordingByUser(interaction.user.id)
 
-            await interaction.reply({
-                content: intl.STOP_RECORDING_EXECUTED,
-                ephemeral: true,
-            })
+            await interaction.deferReply({ ephemeral: true })
+            try {
+                const imgData = await readFile('./assets/yes-chad.png')
+                const attachment = new AttachmentBuilder(imgData);
+                await interaction.followUp({
+                    content: intl.STOP_RECORDING_EXECUTED,
+                    files: [attachment],
+                    ephemeral: true,
+                })
+            } catch (e) {
+                await interaction.followUp({
+                    content: intl.STOP_RECORDING_EXECUTED,
+                    ephemeral: true,
+                })
+            }
 
             updateState({ session: null })
         })
