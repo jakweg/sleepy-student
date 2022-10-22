@@ -3,43 +3,43 @@ import { LOCALE } from "../config"
 export const formatMeetingName = (name: string | null) => name || 'bez nazwy'
 
 export const joiningMessage = (scheduledBy: string, type: string, meetingName: string | null) =>
-    `Cześć <@${scheduledBy}>! Wbijam na ${type} na spotkanie ${formatMeetingName(meetingName)}`
+    `Cześć <@${scheduledBy}>! Wchodzę na ${formatMeetingName(meetingName)} jak świnia w trufle`
 
-export const currentlyRecording = (name: string) => `Obecnie nagrywam ${formatMeetingName(name)}`
+export const currentlyRecording = (name: string) => `Leżę w kapitolu z 25-ma studentami, ${formatMeetingName(name)} leci 10 slajdy się psują? I UJ . Jakiś chyba?? wykładowca zabrania nagrywać ??! Warun idzie dostać. Trzymajcie się na tym wykładzie !!!`
 
-export const recordingFinished = (name: string) => `Spotkanie ${formatMeetingName(name)} zakończyło się`
+export const recordingFinished = (name: string) => `Wykładu ${formatMeetingName(name)} już z nami nie ma, miał piękny pogrzeb`
 
-export const ENTER_MEETING_YOURSELF = `Wejdź na spotkanie samemu`
+export const ENTER_MEETING_YOURSELF = `Dołącz do wesołego kółeczka samemu`
 
 export const MAY_NEED_YOUR_HELP_WITH_CAPTCHA = 'Mogę potrzebować Twojej pomocy z kapczą'
 
-export const STOP_RECORDING = `Zatrzymaj nagrywanie`
+export const STOP_RECORDING = `Fajrant`
 
-export const recordingFinishedBy = (by: string) => `Nagrywanie zatrzymane przez <@${by}>`
-export const recordingFinishedTimeout = (afterMinutes: number) => `Nagrywanie zatrzymane autoamtycznie po ${afterMinutes} minutach`
-export const recordingFinishedClosed = () => `Nagrywanie zatrzymane, bo spotkanie się zakończyło`
+export const recordingFinishedBy = (by: string) => `Nagrywanie zatrzymane przez naszego kompana niedoli <@${by}>`
+export const recordingFinishedTimeout = (afterMinutes: number) => `Koszmar studentów trwał ${afterMinutes} minut. Wykładowca nie chciał nas puścić. Donosił tylko slajdy od których studentom robiły się wielkie oczy`
+export const recordingFinishedClosed = () => `Naje… khem, nagrany to do domu`
 export const recordingFinishedOther = () => `Nagrywanie zatrzymane, bo tak`
 
-export const PROCESSING_RECORDING = `Plik będzie wkrótce dostępny, jeszcze się gotuje`
-export const RECORDING_READY = `Nagranie jest gotowe i dostępne`
-export const WATCH_RECORDING_BUTTON = `Oglądnij teraz`
+export const PROCESSING_RECORDING = `Nagrania jeszcze nie ma, ale też jest zajebiście`
+export const RECORDING_READY = `Film ze słoikiem dostępny jest w sieci`
+export const WATCH_RECORDING_BUTTON = `Odpalaj kawalerze`
 export const SCHEDULE_NEXT_WEEK_BUTTON = `Za tydzień o tej samej porze?`
 
-export const CAPTCHA_SOLVE_REQUEST = `Pomoże mi ktoś z tym?`
-export const CAPTCHA_SOLVE_BUTTON = `Dziś to ja zostanę bohaterem dnia!`
+export const CAPTCHA_SOLVE_REQUEST = `Jest tu jakiś cwaniak?`
+export const CAPTCHA_SOLVE_BUTTON = `Tak!`
 
 export const OUTDATED_BUTTON_CLICKED_MESSAGE = `Naprawdę niepowinienaś/eś tego kliknąć`
 export const CAPTCHA_SUBMIT_CONFIRMATION = `Wiszę ci piwo`
-export const CAPTCHA_TOO_LATE_SUBMITTED = `Już, ale i tak dzięki`
+export const CAPTCHA_TOO_LATE_SUBMITTED = `Może i nie byłeś najszybszy, za to ktoś Cię wyprzedził, coś za coś`
 
-export const CAPTCHA_MODAL_TITLE = `Rozwiąż kapcze`
-export const CAPTCHA_MODAL_INPUT_TITLE = `Co tutaj jest napisane?`
+export const CAPTCHA_MODAL_TITLE = `To rozwiąż kapcze`
+export const CAPTCHA_MODAL_INPUT_TITLE = `Co tu pisze… khem, jest napisane?`
 
 export const STOP_FAILED_NO_RECORDING = `Nie ma żadnego nagrania`
-export const STOP_RECORDING_CONFIRM_TITLE = `**Naprawdę mam przestać nagrywać?**`
+export const STOP_RECORDING_CONFIRM_TITLE = `**Pewny, że chcesz zatrzymać?**`
 
-export const YES = `TAK`
-export const NO = `Jednak nie`
+export const YES = `To śmiało`
+export const NO = `Trochę się cykam`
 export const UNDO = `Cofnij`
 export const STOP_RECORDING_CANCELLED = `Anulowano!`
 export const STOP_RECORDING_EXECUTED = `Zatrzymane na Twój rozkaz`
