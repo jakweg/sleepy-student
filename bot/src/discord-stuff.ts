@@ -363,14 +363,13 @@ const handleDetailsRequest = async (interaction: ChatInputCommandInteraction<Cac
     })
 }
 
-const handleDetailsAutocomplete = (interaction: AutocompleteInteraction) => {
-    const { name, value } = interaction.options.getFocused(true);
-
-    interaction
-        .respond(getAll()
-            .filter(e => e.id.startsWith(value) || e.name.toLocaleLowerCase().includes(name.toLocaleLowerCase()))
-            .map(e => ({ name: e.name, value: e.id })))
-        .catch(e => void (e))
+const handleDetailsAutocomplete = async (interaction: AutocompleteInteraction) => {
+    const { name, value = '' } = interaction.options.getFocused(true);
+    if (name === 'id')
+        await interaction.respond(getAll()
+            .filter(e => e.id.startsWith(value) || e.name?.toLocaleLowerCase()?.includes(value.toLocaleLowerCase()))
+            .map(e => ({ name: e.name || intl.MEETING_UNNAMED, value: e.id })))
+    else await interaction.respond([])
 }
 
 const handleInteraction = async (interaction: Interaction<CacheType>) => {
@@ -385,7 +384,7 @@ const handleInteraction = async (interaction: Interaction<CacheType>) => {
 
     if (interaction.isAutocomplete()) {
         switch (interaction.commandName) {
-            case 'details': handleDetailsAutocomplete(interaction); break
+            case 'details': await handleDetailsAutocomplete(interaction); break
         }
 
     } else if (interaction.isChatInputCommand()) {

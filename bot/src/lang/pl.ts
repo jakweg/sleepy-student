@@ -4,7 +4,8 @@ const LOCALE = 'pl'
 const dateTimeFormat = new Intl.DateTimeFormat(LOCALE, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })
 const relativeTimeFormat = new Intl.RelativeTimeFormat(LOCALE, { style: 'long' })
 
-export const formatMeetingName = (name: string | null) => `\`${name || 'bez nazwy'}\``
+export const MEETING_UNNAMED = 'bez nazwy'
+export const formatMeetingName = (name: string | null) => `\`${name || MEETING_UNNAMED}\``
 
 export const joiningMessage = (scheduledBy: string, type: string, meetingName: string | null) =>
     `Cześć <@${scheduledBy}>! Wchodzę na ${formatMeetingName(meetingName)} jak świnia w trufle`
