@@ -3,6 +3,7 @@ import { formatRelativeTime } from "../lang-utils"
 const LOCALE = 'pl'
 const dateTimeFormat = new Intl.DateTimeFormat(LOCALE, { weekday: 'long', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })
 const relativeTimeFormat = new Intl.RelativeTimeFormat(LOCALE, { style: 'long' })
+const pluralRules = new Intl.PluralRules(LOCALE)
 
 export const MEETING_UNNAMED = 'bez nazwy'
 export const formatMeetingName = (name: string | null) => `\`${name || MEETING_UNNAMED}\``
@@ -69,7 +70,8 @@ export const SCHEDULE_NEXT_WEEK_COMMAND_SCHEDULED_BUTTON_DISABLED = `Za tydzień
 export const scheduleNextWeekCommandConfirmation = (name: string, timestamp: number) => `Zaplanowano ${formatMeetingName(name)} na dzień ${dateTimeFormat.format(new Date(timestamp))}`
 
 export const commandUpcomingLineFormat = (name: string, type: string, timestamp: number) => `\`${dateTimeFormat.format(new Date(timestamp))}\` ${formatMeetingName(name)} (${type})`
-export const commandUpcomingHeaderLine = (total: number) => `Zaplanowane spotkania do nagrania: (${total})`
+const spotkanieOptions = { few: 'spotkania', many: 'spotkań', one: 'spotkanie', other: 'spotkania' }
+export const commandUpcomingHeaderLine = (total: number) => `Zaplanowano ${total} ${spotkanieOptions[pluralRules.select(total)]} do nagrania:`
 export const COMMAND_UPCOMING_NONE_FOUND = `Jeszcze nic nie zaplanowano`
 
 export const meetingDetails = (name: string, date: number, url: string, by: string, channel: string, created: number) => `Szczegóły spotkania:

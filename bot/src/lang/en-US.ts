@@ -3,6 +3,7 @@ import { formatRelativeTime } from "../lang-utils"
 const LOCALE = 'en-US'
 const dateTimeFormat = new Intl.DateTimeFormat(LOCALE, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })
 const relativeTimeFormat = new Intl.RelativeTimeFormat(LOCALE, { style: 'long' })
+const pluralRules = new Intl.PluralRules(LOCALE)
 
 export const MEETING_UNNAMED = 'unnamed'
 export const formatMeetingName = (name: string | null) => `\`${name || MEETING_UNNAMED}\``
@@ -69,7 +70,8 @@ export const SCHEDULE_NEXT_WEEK_COMMAND_SCHEDULED_BUTTON_DISABLED = `Scheduled f
 export const scheduleNextWeekCommandConfirmation = (name: string, timestamp: number) => `Scheduled ${formatMeetingName(name)} for day ${dateTimeFormat.format(new Date(timestamp))}`
 
 export const commandUpcomingLineFormat = (name: string, type: string, timestamp: number) => `\`${dateTimeFormat.format(new Date(timestamp))}\` ${formatMeetingName(name)} (${type})`
-export const commandUpcomingHeaderLine = (total: number) => `Scheduled recordings: (${total})`
+const meetingOptions = { one: 'recording', other: 'recordings' }
+export const commandUpcomingHeaderLine = (total: number) => `Scheduled ${total} ${meetingOptions[pluralRules.select(total)]}:`
 export const COMMAND_UPCOMING_NONE_FOUND = `No upcoming recordings`
 
 export const meetingDetails = (name: string, date: number, url: string, by: string, channel: string, created: number) => `Meeting details:
