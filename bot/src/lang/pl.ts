@@ -1,7 +1,7 @@
 import { formatRelativeTime } from "../lang-utils"
 
 const LOCALE = 'pl'
-const dateTimeFormat = new Intl.DateTimeFormat(LOCALE, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })
+const dateTimeFormat = new Intl.DateTimeFormat(LOCALE, { weekday: 'long', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })
 const relativeTimeFormat = new Intl.RelativeTimeFormat(LOCALE, { style: 'long' })
 
 export const MEETING_UNNAMED = 'bez nazwy'
