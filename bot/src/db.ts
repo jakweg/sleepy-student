@@ -101,6 +101,16 @@ export const findById = (id: string): ScheduledRecording | null => {
     return null
 }
 
+export const findByNameExact = (name: string): ScheduledRecording | null => {
+    const result = Object.entries(instance.scheduledRecordings)
+        .find(([_, v]) => v.name === name)
+    if (result) {
+        const [id, found] = result
+        return { id, ...found }
+    }
+    return null
+}
+
 
 export const deleteById = async (id: string): Promise<ScheduledRecording | null> => {
     const found = instance.scheduledRecordings[id]

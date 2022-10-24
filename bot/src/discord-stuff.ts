@@ -2,7 +2,7 @@ import { ActionRowBuilder, AttachmentBuilder, AutocompleteInteraction, ButtonBui
 import { readFile } from 'fs/promises';
 import { ALLOWED_CHANNELS, LANGUAGE, MAX_MEETING_DURATION_MINUTES } from "./config";
 import { currentState, updateState } from "./current-state";
-import { deleteById, findById, findInPastIfNotUsedById, findInPastIfNotUsedByIdAndMarkUsed, getAll, scheduleNewRecording } from "./db";
+import { deleteById, findById, findByNameExact, findInPastIfNotUsedById, findInPastIfNotUsedByIdAndMarkUsed, getAll, scheduleNewRecording } from "./db";
 import intl, { en } from "./intl";
 import { fillCaptchaAndJoin } from "./logic-webex";
 import Session, { WebexSession } from "./session";
@@ -336,10 +336,10 @@ const handleNextRecordingsRequest = async (interaction: ChatInputCommandInteract
 const handleDetailsRequest = async (interaction: ChatInputCommandInteraction<CacheType>) => {
     const id = interaction.options.getString('id')
 
-    const entry = findById(id || '')
+    const entry = findById(id || '') || findByNameExact(id || '')
     if (!entry) {
         await interaction.reply({
-            content: `Not found meeting with this ID`,
+            content: `Not found such meeting`,
             ephemeral: true
         })
         return
