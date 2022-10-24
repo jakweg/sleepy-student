@@ -19,7 +19,7 @@ RECORDINGS_PATH=/where/to/store/recordings docker-compose up --build
 |         CRF          |          `38`          |                    determines the quality of video, 1-51, 1 means high quality, 51 means small file size                     |
 |      FRAMERATE       |          `4`           |                       frames per second of video, higher means bigger file sizes and better CPU needed                       |
 |    AUDIO_BITRATE     |          `32`          |       determines the quality of audio in thousands, 48 is standard for most microphones, lower means smaller file size       |
-|   FILENAME_FORMAT    | `%name%-%month%-%day%` |   Name of file to which save the recording, without an extension, `%name%`, `%hour%` etc. gets replaced properly replaced    |
+|   FILENAME_FORMAT    | `%name%-%month%-%day%` |          Name of file when saving a recording, without any extension, `%name%`, `%hour%` etc. get replaced properly          |
 |      WEBEX_NAME      |        `Wojtek`        |                                          name which to type when webex asks for it                                           |
 |      WEBEX_MAIL      |                        |                                          mail which to type when webex asks for it                                           |
 | MAX_MEETING_DURATION |          `90`          |                                duration after a recording will always be stopped, in minutes                                 |
