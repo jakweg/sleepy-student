@@ -4,7 +4,7 @@ const LOCALE = 'pl'
 const dateTimeFormat = new Intl.DateTimeFormat(LOCALE, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })
 const relativeTimeFormat = new Intl.RelativeTimeFormat(LOCALE, { style: 'long' })
 
-export const formatMeetingName = (name: string | null) => name || 'bez nazwy'
+export const formatMeetingName = (name: string | null) => `\`${name || 'bez nazwy'}\``
 
 export const joiningMessage = (scheduledBy: string, type: string, meetingName: string | null) =>
     `Cześć <@${scheduledBy}>! Wchodzę na ${formatMeetingName(meetingName)} jak świnia w trufle`
@@ -56,7 +56,7 @@ export const RECORD_COMMAND_DATE_IN_PAST = `Ta data jest w przeszłości`
 export const RECORD_COMMAND_INVALID_PLATFORM = `Nie ogarniam, to webex czy teams?`
 export const RECORD_COMMAND_SOON = `wkrótce`
 
-export const recordingCommandAccepted = (name: string, date: Date, msDifference: number) => `Zaplanowano nagrywanie spotkania \`${formatMeetingName(name)}\` na \`${dateTimeFormat.format(date)}\` (\`${formatRelativeTime(msDifference, relativeTimeFormat)}\`)`
+export const recordingCommandAccepted = (name: string, date: Date, msDifference: number) => `Zaplanowano nagrywanie spotkania ${formatMeetingName(name)} na \`${dateTimeFormat.format(date)}\` (\`${formatRelativeTime(msDifference, relativeTimeFormat)}\`)`
 
 export const DELETE_COMMAND_NOT_FOUND = `Nie znaleziono takiego`
 export const deleteCommandConfirmation = (name: string, timestamp: number) => `Usunięto zaplanowane spotkanie ${formatMeetingName(name)} na ${dateTimeFormat.format(new Date(timestamp))}`

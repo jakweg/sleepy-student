@@ -4,7 +4,7 @@ const LOCALE = 'en-US'
 const dateTimeFormat = new Intl.DateTimeFormat(LOCALE, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })
 const relativeTimeFormat = new Intl.RelativeTimeFormat(LOCALE, { style: 'long' })
 
-export const formatMeetingName = (name: string | null) => name || 'unnamed'
+export const formatMeetingName = (name: string | null) => `\`${name || 'unnamed'}\``
 
 export const joiningMessage = (scheduledBy: string, type: string, meetingName: string | null) =>
     `Hey <@${scheduledBy}>! Joining ${type} for scheduled meeting ${formatMeetingName(meetingName)}`
@@ -56,7 +56,7 @@ export const RECORD_COMMAND_DATE_IN_PAST = `This date is in the past`
 export const RECORD_COMMAND_INVALID_PLATFORM = `Couldn\'t determine platform`
 export const RECORD_COMMAND_SOON = `soon`
 
-export const recordingCommandAccepted = (name: string, date: Date, msDifference: number) => `Scheduled recording \`${formatMeetingName(name)}\` for \`${dateTimeFormat.format(date)}\` (\`${formatRelativeTime(msDifference, relativeTimeFormat)}\`)`
+export const recordingCommandAccepted = (name: string, date: Date, msDifference: number) => `Scheduled recording ${formatMeetingName(name)} for \`${dateTimeFormat.format(date)}\` (\`${formatRelativeTime(msDifference, relativeTimeFormat)}\`)`
 
 export const DELETE_COMMAND_NOT_FOUND = `Not found meeting with this ID`
 export const deleteCommandConfirmation = (name: string, timestamp: number) => `Deleted scheduled ${formatMeetingName(name)} for day ${dateTimeFormat.format(new Date(timestamp))}`
