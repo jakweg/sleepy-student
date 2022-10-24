@@ -8,6 +8,7 @@ export const TIME_ZONE = process.env.TIME_ZONE || 'GMT'
 export const LANGUAGE = process.env.LANGUAGE || 'en-US'
 export const WIDTH = parseInt(process.env.WIDTH!, 10) || 1280
 export const HEIGHT = parseInt(process.env.HEIGHT!, 10) || 720
+export const FINAL_FILENAME_FORMAT = process.env.FILENAME_FORMAT || '%name%-%month%-%day%'
 export const VIDEO_CRF = `${parseInt(process.env.VIDEO_CRF!, 10) || 38}`
 export const AUDIO_BITRATE = `${parseInt(process.env.AUDIO_BITRATE!, 10) || 32}`
 export const FRAMERATE = `${parseInt(process.env.FRAMERATE!, 10) || 4}`

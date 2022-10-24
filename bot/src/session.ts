@@ -1,7 +1,7 @@
 import { Message } from 'discord.js';
 import { rename } from 'fs/promises';
 import { Page } from 'puppeteer';
-import { AUDIO_BITRATE, FRAMERATE, HEIGHT, RECORDINGS_PATH, VIDEO_CRF, WIDTH } from "./config";
+import { AUDIO_BITRATE, FINAL_FILENAME_FORMAT, FRAMERATE, HEIGHT, RECORDINGS_PATH, VIDEO_CRF, WIDTH } from "./config";
 import { ScheduledRecording } from "./db";
 import { BROWSER, DISCORD } from "./main";
 import messages from './messages';
@@ -133,8 +133,17 @@ export default class Session {
             TEMPORARY_MERGED_PATH, '-y',])
 
         merger.once('close', async () => {
-            const suggestedSaveName = this.entry.name ? this.entry.name : `unnamed-${this.entry.type}-${new Date().toJSON()}`
-            const sanitized = sanitizeFileName(suggestedSaveName);
+            const suggestedSaveName = this.entry.name ? this.entry.name : `unnamed-${this.entry.type}`
+            const entry = this.entry
+            const date = new Date(entry.timestamp)
+            const sanitized = sanitizeFileName(FINAL_FILENAME_FORMAT
+                .replace('%year%', `${date.getFullYear()}`)
+                .replace('%month%', `${(date.getMonth() + 1 < 10 ? '0' : '') + (date.getMonth() + 1)}`)
+                .replace('%day%', `${(date.getDate() < 10 ? '0' : '') + date.getDate()}`)
+                .replace('%hour%', `${(date.getHours() < 10 ? '0' : '') + date.getHours()}`)
+                .replace('%minute%', `${(date.getMinutes() < 10 ? '0' : '') + date.getMinutes()}`)
+                .replace('%name%', suggestedSaveName)
+            );
             let name = `${sanitized}.mp4`
 
             if (await fileExists(`${RECORDINGS_PATH}/${name}`)) {
