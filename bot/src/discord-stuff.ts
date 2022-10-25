@@ -6,6 +6,7 @@ import { deleteById, findById, findByNameExact, findInPastIfNotUsedById, findInP
 import intl, { en } from "./intl";
 import { fillCaptchaAndJoin } from "./logic-webex";
 import Session, { WebexSession } from "./session";
+import { sleep } from "./utils";
 
 const verifyValidSession = async (interaction: ButtonInteraction<CacheType>, sessionId: string): Promise<Session> => {
     if (!currentState.session || sessionId !== currentState.session?.sessionId) {
@@ -303,6 +304,11 @@ const handleScheduleNextWeek = async (interaction: ButtonInteraction<CacheType>,
             scheduleButton.disabled = true
             scheduleButton['label'] = intl.SCHEDULE_NEXT_WEEK_COMMAND_SCHEDULED_BUTTON_DISABLED
         }
+        originalMessage.edit({ components: [row] }).catch(e => void (e))
+
+        await sleep(1 * 60 * 1000)
+
+        row.components.splice(row.components.indexOf(scheduleButton), 1)
         originalMessage.edit({ components: [row] }).catch(e => void (e))
 
     } catch (e) {
