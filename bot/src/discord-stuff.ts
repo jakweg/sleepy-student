@@ -495,7 +495,7 @@ export const launch = async () => {
 export async function advanceWebexAndJoin(
     session: WebexSession,
     captcha: string | null,) {
-    if (!session.isWaitingForCaptcha()) return
+    if (captcha !== null && !session.isWaitingForCaptcha()) return
     session.disableWaitingForCaptcha()
 
     const runningWebex = await fillCaptchaAndJoin(session, captcha)
