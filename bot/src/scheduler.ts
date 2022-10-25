@@ -51,7 +51,8 @@ const startTeams = async (session: Session, entry: ScheduledRecording) => {
     await session.startRecording()
 
     session.setRecordingTimeout(MAX_MEETING_DURATION_MINUTES)
-    session.addMeetingClosedMonitor(async page => (await page.$('form[name="retryForm"]')) ? 'closed' : null)
+    const originalUrl = session.page.url()
+    session.addMeetingClosedMonitor(async page => (await page.$('form[name="retryForm"]') || originalUrl !== page.url()) ? 'closed' : null)
 }
 
 const doCheck = async () => {

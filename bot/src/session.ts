@@ -192,7 +192,7 @@ export default class Session {
                     break
                 }
 
-                await sleep(2 * 1000)
+                await sleep(500)
             }
         } catch (e) {
             void (e)
