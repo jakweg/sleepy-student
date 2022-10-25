@@ -34,6 +34,7 @@ export default class Session {
             throw new Error('Channel is not text based')
 
         const page = await BROWSER.newPage()
+        await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'dark' }]);
 
         const sessionId = `${Date.now()}`
         const message = await channel.send(messages.fromState(entry, sessionId, null))
