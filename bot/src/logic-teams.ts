@@ -56,7 +56,7 @@ export const startTeamsSession = async (url: string, session: Session) => {
 
     session.assertActive()
     try {
-        await page.waitForSelector('button[type=button].icons-call-jump-in', { timeout: 20_000 })
+        await page.waitForSelector('button[type=button].icons-call-jump-in', { timeout: 60_000 })
     } catch (e) {
         console.warn('Failed to find join button, trying loading page again');
 
@@ -74,7 +74,17 @@ export const startTeamsSession = async (url: string, session: Session) => {
         // await page.click('#leave-calling-pre-join')
         // page.screenshot({ path: '/recordings/debug2.png', })
 
-        await page.waitForSelector('button[type=button].icons-call-jump-in', { timeout: 20_000 })
+        try {
+            await page.waitForSelector('button[type=button].icons-call-jump-in', { timeout: 60_000 })
+        } catch (e) {
+            console.warn('Failed to find join button, trying loading page again');
+
+            await page.goto('about:blank', { waitUntil: 'domcontentloaded' })
+            await sleep(500)
+            await page.goto(url, { waitUntil: "domcontentloaded" })
+
+            await page.waitForSelector('button[type=button].icons-call-jump-in', { timeout: 60_000 })
+        }
     }
     await page.click('button[type=button].icons-call-jump-in')
 
