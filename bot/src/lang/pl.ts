@@ -24,6 +24,7 @@ export const STOP_RECORDING = `Fajrant`
 export const recordingFinishedBy = (by: string) => `Nagrywanie zatrzymane przez naszego kompana niedoli <@${by}>`
 export const recordingFinishedTimeout = (afterMinutes: number) => `Koszmar studentów trwał ${afterMinutes} minut. Wykładowca nie chciał nas puścić. Donosił tylko slajdy od których studentom robiły się wielkie oczy`
 export const recordingFinishedClosed = () => `Naje… khem, nagrany to do domu`
+export const recordingFinishedLostParticipants = () => `Opuściłem spotkanie, bo inni też wychodzili`
 export const recordingFinishedOther = () => `Nagrywanie zatrzymane, bo tak`
 
 export const PROCESSING_RECORDING = `Nagrania jeszcze nie ma, ale też jest zajebiście`

@@ -2,7 +2,7 @@ import { MAX_MEETING_DURATION_MINUTES, RECORDINGS_PATH, SCHEDULER_INTERVAL_MS } 
 import { currentState, updateState } from "./current-state";
 import { addToPast, popFromThePast, ScheduledRecording } from "./db";
 import { advanceWebexAndJoin } from "./discord-stuff";
-import { startTeamsSession } from "./logic-teams";
+import { observeMeetingClosedState, startTeamsSession } from "./logic-teams";
 import { createWebexSession } from "./logic-webex";
 import { DISCORD } from "./main";
 import Session, { WebexSession } from "./session";
@@ -51,8 +51,8 @@ const startTeams = async (session: Session, entry: ScheduledRecording) => {
     await session.startRecording()
 
     session.setRecordingTimeout(MAX_MEETING_DURATION_MINUTES)
-    const originalUrl = session.page.url()
-    session.addMeetingClosedMonitor(async page => (await page.$('form[name="retryForm"]') || originalUrl !== page.url()) ? 'closed' : null)
+    const observer = observeMeetingClosedState(session.page)
+    session.addMeetingClosedMonitor((page) => observer.checkStatus(page))
 }
 
 const doCheck = async () => {

@@ -58,6 +58,9 @@ const fromState = (entry: ScheduledRecording, sessionId: string, recording: Reco
             case 'meeting-closed':
                 contentLines.push(intl.recordingFinishedClosed())
                 break
+            case 'lost-participants':
+                contentLines.push(intl.recordingFinishedLostParticipants())
+                break
             default:
                 contentLines.push(intl.recordingFinishedOther())
                 break

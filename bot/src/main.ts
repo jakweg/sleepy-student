@@ -30,11 +30,4 @@ await sleep(500)
 
 export const [BROWSER, DISCORD] = await Promise.all([launchBrowser(), launchDiscord()])
 
-// addStateListener(state => {
-//     if (state.type === 'recording-webex' || state.type === 'recording-teams')
-//         DISCORD.user?.setActivity({ name: 'session for You', type: ActivityType.Watching })
-//     else
-//         DISCORD.user?.setActivity(undefined)
-// })
-
 initScheduler()

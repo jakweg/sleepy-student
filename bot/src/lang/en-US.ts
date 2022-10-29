@@ -24,6 +24,7 @@ export const STOP_RECORDING = `Stop the recording`
 export const recordingFinishedBy = (by: string) => `Recording has been stopped by <@${by}>`
 export const recordingFinishedTimeout = (afterMinutes: number) => `Recording has been stopped automatically after ${afterMinutes} minutes`
 export const recordingFinishedClosed = () => `Recording was stopped, because meeting also closed`
+export const recordingFinishedLostParticipants = () => `Left meeting, because others were leaving as well`
 export const recordingFinishedOther = () => `Recording was stopped for no reason`
 
 export const PROCESSING_RECORDING = `File will be available soon, as it's now being processed`

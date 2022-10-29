@@ -115,3 +115,55 @@ export const startTeamsSession = async (url: string, session: Session) => {
         .then(() => page.click('.calling-alert-container .icons-close'))
         .catch(e => void (e))
 }
+
+export const observeMeetingClosedState = (page: Page) => {
+    let finished = false
+    let shouldBeClosed = false
+
+    sleep(1_000)
+        .then(async () => {
+
+            (await page.waitForSelector('#roster-button', { timeout: 0 })).click();
+            await sleep(50);
+
+            (await page.waitForSelector('[title="Close right pane"]', { timeout: 0 })).click()
+
+            await page.waitForSelector('[data-tid="participantsInCall"] .toggle-number', { timeout: 0 })
+
+            const getParticipantsCount = () => page.evaluate(() => parseInt(document.querySelector('[data-tid="participantsInCall"] .toggle-number').textContent.replace('(', '').replace(')', ''), 10))
+
+            let top = 0
+            const LEAVE_WHEN_TOP_COUNT_BELOW = 0.4
+            const MIN_TOP_PARTICIPANTS_TO_LEAVE = 5
+
+            while (true) {
+                const participantsCount = await getParticipantsCount()
+
+                if (participantsCount > top) {
+                    top = participantsCount
+                } else if (top >= MIN_TOP_PARTICIPANTS_TO_LEAVE && participantsCount < top * LEAVE_WHEN_TOP_COUNT_BELOW) {
+                    // should leave
+                    shouldBeClosed = true
+                    return
+                }
+                if (finished || shouldBeClosed) return
+                await sleep(5_000)
+            }
+        })
+        .catch(e => console.error(e))
+
+    const originalUrl = page.url()
+    return {
+        checkStatus: async (page: Page) => {
+            if (shouldBeClosed)
+                return 'lost-participants'
+
+            if (await page.$('form[name="retryForm"]') || originalUrl !== page.url()) {
+                finished = true
+                return 'closed'
+            }
+
+            return null
+        }
+    }
+}

@@ -10,7 +10,7 @@ import { fileExists, sanitizeFileName, sleep } from './utils';
 
 export interface RecordingState {
     status: 'running' | 'stopped' | 'ready'
-    stopped?: { type: 'by', by: string } | { type: 'timeout', afterMinutes: number } | { type: 'meeting-closed', }
+    stopped?: { type: 'by', by: string } | { type: 'timeout', afterMinutes: number } | { type: 'meeting-closed', } | { type: 'lost-participants', }
     readyFilename?: string
     videoPath: string
     audioPath: string
@@ -182,13 +182,17 @@ export default class Session {
     }
 
 
-    public async addMeetingClosedMonitor(checker: (page: Page) => Promise<'closed' | null>): Promise<void> {
+    public async addMeetingClosedMonitor(checker: (page: Page) => Promise<'closed' | 'lost-participants' | null>): Promise<void> {
         try {
             while (true) {
                 this.assertActive()
 
-                if (await checker(this.page) === 'closed') {
+                const result = await checker(this.page)
+                if (result === 'closed') {
                     this.internalStopRecording({ type: 'meeting-closed' })
+                    break
+                } else if (result === 'lost-participants') {
+                    this.internalStopRecording({ type: 'lost-participants' })
                     break
                 }
 
