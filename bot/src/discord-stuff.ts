@@ -281,7 +281,7 @@ const handleScheduleNextWeek = async (interaction: ButtonInteraction<CacheType>,
                 .setCustomId('new-date')
                 .setLabel(intl.SCHEDULE_NEXT_WEEK_COMMAND_DATE_INPUT_PROMPT)
                 .setStyle(TextInputStyle.Short)
-                .setMinLength(19)
+                .setMinLength(16)
                 .setMaxLength(19)
                 .setPlaceholder(intl.SCHEDULE_NEXT_WEEK_COMMAND_DATE_INPUT_PLACEHOLDER)
                 .setRequired(true)

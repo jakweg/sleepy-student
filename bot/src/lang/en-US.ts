@@ -68,7 +68,7 @@ export const SCHEDULE_NEXT_WEEK_COMMAND_MODAL_TITLE = `Reschedule it?`
 export const SCHEDULE_NEXT_WEEK_COMMAND_NAME_INPUT_PROMPT = `New name for it?`
 export const SCHEDULE_NEXT_WEEK_COMMAND_NAME_INPUT_PLACEHOLDER = `Meeting name`
 export const SCHEDULE_NEXT_WEEK_COMMAND_DATE_INPUT_PROMPT = `New date and time?`;
-export const SCHEDULE_NEXT_WEEK_COMMAND_DATE_INPUT_PLACEHOLDER = `yyyy.MM.dd hh:mm:ss`;
+export const SCHEDULE_NEXT_WEEK_COMMAND_DATE_INPUT_PLACEHOLDER = `yyyy.MM.dd hh:mm`;
 export const SCHEDULE_NEXT_WEEK_COMMAND_SCHEDULED_BUTTON_DISABLED = `Meeting successfully rescheduled`
 export const scheduleNextWeekCommandConfirmation = (name: string, timestamp: number) => `Scheduled ${formatMeetingName(name)} for day ${dateTimeFormat.format(new Date(timestamp))}`
 
@@ -92,7 +92,7 @@ export const COMMAND_RECORD_DESCRIPTION = 'Record session'
 export const COMMAND_RECORD_LINK_NAME = 'link'
 export const COMMAND_RECORD_LINK_DESCRIPTION = 'Link to join'
 export const COMMAND_RECORD_DATE_NAME = 'date'
-export const COMMAND_RECORD_DATE_DESCRIPTION = 'When to join yyyy.MM.dd hh:mm:ss or "now"'
+export const COMMAND_RECORD_DATE_DESCRIPTION = 'When to join yyyy.MM.dd hh:mm or "now"'
 export const COMMAND_RECORD_NAME_NAME = 'name'
 export const COMMAND_RECORD_NAME_DESCRIPTION = 'Name this meeting'
 

@@ -54,7 +54,7 @@ export const STOP_RECORDING_EXECUTED = `Zatrzymane na Twój rozkaz`
 export const SCREENSHOT_DELIVERED_TEXT = `Proszę cię bardzo`
 
 export const RECORD_COMMAND_INVALID_URL = `Coś nie tak z tym linkiem`
-export const RECORD_COMMAND_INVALID_DATE = `Format daty jest nie tak, na pewno yyyy.MM.dd hh:mm:ss?`
+export const RECORD_COMMAND_INVALID_DATE = `Format daty jest nie tak, na pewno yyyy.MM.dd hh:mm?`
 export const RECORD_COMMAND_DATE_IN_PAST = `Ta data jest w przeszłości`
 export const RECORD_COMMAND_INVALID_PLATFORM = `Nie ogarniam, to webex czy teams?`
 export const RECORD_COMMAND_SOON = `wkrótce`
@@ -68,7 +68,7 @@ export const SCHEDULE_NEXT_WEEK_COMMAND_MODAL_TITLE = `Wbijać na to samo spotka
 export const SCHEDULE_NEXT_WEEK_COMMAND_NAME_INPUT_PROMPT = `Jak to nowe spotkanie nazwać?`;
 export const SCHEDULE_NEXT_WEEK_COMMAND_NAME_INPUT_PLACEHOLDER = `Nazwa spotkania`;
 export const SCHEDULE_NEXT_WEEK_COMMAND_DATE_INPUT_PROMPT = `Data i godzina kolejnego spotkania?`;
-export const SCHEDULE_NEXT_WEEK_COMMAND_DATE_INPUT_PLACEHOLDER = `yyyy.MM.dd hh:mm:ss`;
+export const SCHEDULE_NEXT_WEEK_COMMAND_DATE_INPUT_PLACEHOLDER = `yyyy.MM.dd hh:mm`;
 export const SCHEDULE_NEXT_WEEK_COMMAND_SCHEDULED_BUTTON_DISABLED = `Ustawiono na przyszłość`;
 
 export const scheduleNextWeekCommandConfirmation = (name: string, timestamp: number) => `Zaplanowano ${formatMeetingName(name)} na dzień ${dateTimeFormat.format(new Date(timestamp))}`
@@ -93,7 +93,7 @@ export const COMMAND_RECORD_DESCRIPTION = 'Wbij na spotkanie i nagraj je'
 export const COMMAND_RECORD_LINK_NAME = 'link'
 export const COMMAND_RECORD_LINK_DESCRIPTION = 'Kolega prosi o link'
 export const COMMAND_RECORD_DATE_NAME = 'kiedy'
-export const COMMAND_RECORD_DATE_DESCRIPTION = 'Kiedy wbijać, w formacie yyyy.MM.dd hh:mm:ss lub "now"'
+export const COMMAND_RECORD_DATE_DESCRIPTION = 'Kiedy wbijać, w formacie yyyy.MM.dd hh:mm lub "now"'
 export const COMMAND_RECORD_NAME_NAME = 'nazwa'
 export const COMMAND_RECORD_NAME_DESCRIPTION = 'Jak nazwać to spotkanie?'
 
