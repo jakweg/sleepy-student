@@ -92,7 +92,8 @@ export const COMMAND_RECORD_DESCRIPTION = 'Record session'
 export const COMMAND_RECORD_LINK_NAME = 'link'
 export const COMMAND_RECORD_LINK_DESCRIPTION = 'Link to join'
 export const COMMAND_RECORD_DATE_NAME = 'date'
-export const COMMAND_RECORD_DATE_DESCRIPTION = 'When to join yyyy.MM.dd hh:mm or "now"'
+export const COMMAND_RECORD_DATE_NOW_MARKER = 'now'
+export const COMMAND_RECORD_DATE_DESCRIPTION = `When to join yyyy.MM.dd hh:mm or "${COMMAND_RECORD_DATE_NOW_MARKER}"`
 export const COMMAND_RECORD_NAME_NAME = 'name'
 export const COMMAND_RECORD_NAME_DESCRIPTION = 'Name this meeting'
 

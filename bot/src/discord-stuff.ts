@@ -176,7 +176,8 @@ const handleRecordRequest = async (interaction: ChatInputCommandInteraction<Cach
     let url = interaction.options.getString('link')
     const name = interaction.options.getString('name', false)?.replace(/@/g, '') ?? null
     const whenString = interaction.options.getString('when') ?? ''
-    const date = new Date(whenString === 'now' ? (Date.now() + 1_100) : whenString)
+    const isDateNow = whenString === 'now' || whenString === en.COMMAND_RECORD_DATE_NOW_MARKER || whenString === intl.COMMAND_RECORD_DATE_NOW_MARKER;
+    const date = new Date(isDateNow ? (Date.now() + 1_100) : whenString)
 
     try {
         url = new URL(url).href

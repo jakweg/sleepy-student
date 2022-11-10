@@ -93,7 +93,8 @@ export const COMMAND_RECORD_DESCRIPTION = 'Wbij na spotkanie i nagraj je'
 export const COMMAND_RECORD_LINK_NAME = 'link'
 export const COMMAND_RECORD_LINK_DESCRIPTION = 'Kolega prosi o link'
 export const COMMAND_RECORD_DATE_NAME = 'kiedy'
-export const COMMAND_RECORD_DATE_DESCRIPTION = 'Kiedy wbijać, w formacie yyyy.MM.dd hh:mm lub "now"'
+export const COMMAND_RECORD_DATE_NOW_MARKER = 'teraz'
+export const COMMAND_RECORD_DATE_DESCRIPTION = `Kiedy wbijać, w formacie yyyy.MM.dd hh:mm lub "${COMMAND_RECORD_DATE_NOW_MARKER}"`
 export const COMMAND_RECORD_NAME_NAME = 'nazwa'
 export const COMMAND_RECORD_NAME_DESCRIPTION = 'Jak nazwać to spotkanie?'
 
