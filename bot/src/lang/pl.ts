@@ -64,10 +64,13 @@ export const recordingCommandAccepted = (name: string, date: Date, msDifference:
 export const DELETE_COMMAND_NOT_FOUND = `Nie znaleziono takiego`
 export const deleteCommandConfirmation = (name: string, timestamp: number) => `Usunięto zaplanowane spotkanie ${formatMeetingName(name)} na ${dateTimeFormat.format(new Date(timestamp))}`
 
-export const SCHEDULE_NEXT_WEEK_COMMAND_MODAL_TITLE = `Wbijać za tydzień tak samo?`
-export const SCHEDULE_NEXT_WEEK_COMMAND_NAME_INPUT_PROMPT = `Jak to nowe spotkanie nazwać?`
-export const SCHEDULE_NEXT_WEEK_COMMAND_NAME_INPUT_PLACEHOLDER = `Nazwa spotkania`
-export const SCHEDULE_NEXT_WEEK_COMMAND_SCHEDULED_BUTTON_DISABLED = `Za tydzień o tej samej`
+export const SCHEDULE_NEXT_WEEK_COMMAND_MODAL_TITLE = `Wbijać na to samo spotkanie?`;
+export const SCHEDULE_NEXT_WEEK_COMMAND_NAME_INPUT_PROMPT = `Jak to nowe spotkanie nazwać?`;
+export const SCHEDULE_NEXT_WEEK_COMMAND_NAME_INPUT_PLACEHOLDER = `Nazwa spotkania`;
+export const SCHEDULE_NEXT_WEEK_COMMAND_DATE_INPUT_PROMPT = `Data i godzina kolejnego spotkania?`;
+export const SCHEDULE_NEXT_WEEK_COMMAND_DATE_INPUT_PLACEHOLDER = `yyyy.MM.dd hh:mm:ss`;
+export const SCHEDULE_NEXT_WEEK_COMMAND_SCHEDULED_BUTTON_DISABLED = `Ustawiono na przyszłość`;
+
 export const scheduleNextWeekCommandConfirmation = (name: string, timestamp: number) => `Zaplanowano ${formatMeetingName(name)} na dzień ${dateTimeFormat.format(new Date(timestamp))}`
 
 export const commandUpcomingLineFormat = (name: string, type: string, timestamp: number) => `\`${dateTimeFormat.format(new Date(timestamp))}\` ${formatMeetingName(name)} (${type})`

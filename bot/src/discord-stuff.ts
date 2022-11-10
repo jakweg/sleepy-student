@@ -264,7 +264,8 @@ const handleScheduleNextWeek = async (interaction: ButtonInteraction<CacheType>,
 
     await interaction.showModal(new ModalBuilder()
         .setCustomId(`reschedule-modal#any`)
-        .setTitle(intl.SCHEDULE_NEXT_WEEK_COMMAND_MODAL_TITLE).addComponents(
+        .setTitle(intl.SCHEDULE_NEXT_WEEK_COMMAND_MODAL_TITLE)
+        .addComponents(
             new ActionRowBuilder<TextInputBuilder>().addComponents(new TextInputBuilder()
                 .setCustomId('new-name')
                 .setLabel(intl.SCHEDULE_NEXT_WEEK_COMMAND_NAME_INPUT_PROMPT)
@@ -273,11 +274,42 @@ const handleScheduleNextWeek = async (interaction: ButtonInteraction<CacheType>,
                 .setMaxLength(60)
                 .setPlaceholder(intl.SCHEDULE_NEXT_WEEK_COMMAND_NAME_INPUT_PLACEHOLDER)
                 .setRequired(true)
-                .setValue(oldEntry.name)),
-        ))
+                .setValue(oldEntry.name || '')),
+        )
+        .addComponents(
+            new ActionRowBuilder<TextInputBuilder>().addComponents(new TextInputBuilder()
+                .setCustomId('new-date')
+                .setLabel(intl.SCHEDULE_NEXT_WEEK_COMMAND_DATE_INPUT_PROMPT)
+                .setStyle(TextInputStyle.Short)
+                .setMinLength(19)
+                .setMaxLength(19)
+                .setPlaceholder(intl.SCHEDULE_NEXT_WEEK_COMMAND_DATE_INPUT_PLACEHOLDER)
+                .setRequired(true)
+                .setValue(new Date(oldEntry.timestamp + 7 * 24 * 60 * 60 * 1000).toJSON()
+                    .substring(0, 19)
+                    .replaceAll('-', '.')
+                    .replaceAll('T', ' ')
+                ),
+            )))
 
     const result = await interaction.awaitModalSubmit({ time: 0 })
+    const newDate = new Date(result.fields.getTextInputValue('new-date'))
     const newName = result.fields.getTextInputValue('new-name')
+
+    if (isNaN(newDate.getTime())) {
+        await interaction.followUp({
+            content: intl.RECORD_COMMAND_INVALID_DATE,
+            ephemeral: true
+        })
+        return
+    }
+    if (newDate.getTime() < Date.now()) {
+        await interaction.followUp({
+            content: intl.RECORD_COMMAND_DATE_IN_PAST,
+            ephemeral: true
+        })
+        return
+    }
 
     try {
         const oldEntry = await findInPastIfNotUsedByIdAndMarkUsed(id || '')
@@ -286,7 +318,7 @@ const handleScheduleNextWeek = async (interaction: ButtonInteraction<CacheType>,
         const newScheduled = await scheduleNewRecording({
             ...oldEntry,
             name: newName || oldEntry.name,
-            timestamp: oldEntry.timestamp + 7 * 24 * 60 * 60 * 1000,
+            timestamp: newDate.getTime(),
             scheduledBy: interaction.user.id
         })
 
