@@ -161,10 +161,14 @@ export const startTeamsSession = async (url: string, session: Session) => {
         }
       )
     )
-    .then((e) => e.click())
+    .then(async (e) => {
+      e.click();
+      await sleep(100);
+      e.click();
+    })
     .catch((e) => void e);
 
-  sleep(15_000)
+  sleep(26_000)
     .then(() =>
       frame.waitForSelector(
         '[data-tid="callingAlertDismissButton_JoinersOngoingRecording"]',
@@ -173,7 +177,27 @@ export const startTeamsSession = async (url: string, session: Session) => {
         }
       )
     )
-    .then((e) => e.click())
+    .then(async (e) => {
+      e.click();
+      await sleep(100);
+      e.click();
+    })
+    .catch((e) => void e);
+
+  sleep(15_000)
+    .then(() =>
+      frame.waitForSelector(
+        '[data-tid="callingAlertDismissButton_InitiatorStartedRecording"]',
+        {
+          timeout: 0,
+        }
+      )
+    )
+    .then(async (e) => {
+      e.click();
+      await sleep(100);
+      e.click();
+    })
     .catch((e) => void e);
 
   sleep(19_000)
@@ -185,7 +209,11 @@ export const startTeamsSession = async (url: string, session: Session) => {
         }
       )
     )
-    .then((e) => e.click())
+    .then(async (e) => {
+      e.click();
+      await sleep(100);
+      e.click();
+    })
     .catch((e) => void e);
 };
 
