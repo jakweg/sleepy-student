@@ -152,7 +152,7 @@ export const startTeamsSession = async (url: string, session: Session) => {
   session.assertActive();
   if (needsMute) await frame.click("#microphone-button");
 
-  sleep(1_000)
+  sleep(18_000)
     .then(() =>
       frame.waitForSelector(
         '[data-tid="callingAlertDismissButton_DeviceCaptureMute"]',
@@ -161,12 +161,10 @@ export const startTeamsSession = async (url: string, session: Session) => {
         }
       )
     )
-    .then(() =>
-      frame.click('[data-tid="callingAlertDismissButton_DeviceCaptureMute"]')
-    )
+    .then((e) => e.click())
     .catch((e) => void e);
 
-  sleep(1_000)
+  sleep(15_000)
     .then(() =>
       frame.waitForSelector(
         '[data-tid="callingAlertDismissButton_JoinersOngoingRecording"]',
@@ -175,23 +173,19 @@ export const startTeamsSession = async (url: string, session: Session) => {
         }
       )
     )
-    .then(() =>
-      frame.click(
-        '[data-tid="callingAlertDismissButton_JoinersOngoingRecording"]'
-      )
-    )
+    .then((e) => e.click())
     .catch((e) => void e);
 
-  sleep(10_000)
-    .then(async () => {
-      console.log(
-        await frame.evaluate(() =>
-          Array.from(document.querySelectorAll("[data-tid]")).map((e) =>
-            e.getAttribute("data-tid")
-          )
-        )
-      );
-    })
+  sleep(19_000)
+    .then(() =>
+      frame.waitForSelector(
+        '[data-tid="callingAlertDismissButton_NoAvailableMicrophone"]',
+        {
+          timeout: 0,
+        }
+      )
+    )
+    .then((e) => e.click())
     .catch((e) => void e);
 };
 
@@ -211,10 +205,11 @@ export const observeMeetingClosedState = (page: Page) => {
 
       const getParticipantsCount = () =>
         frame.evaluate(() => {
-          const text = document
-            .querySelector("#roster-title-section-2")
-            .textContent.replace("(", "")
-            .replace(")", "");
+          const text =
+            document
+              .querySelector("#roster-title-section-2")
+              ?.textContent?.replace("(", "")
+              ?.replace(")", "") ?? "";
           return parseInt(text.substring(1 + text.lastIndexOf(" ")), 10);
         });
 
