@@ -14,10 +14,7 @@ export const launch = async () => {
     executablePath: browserPath,
     product: "chrome",
     defaultViewport: null,
-    ignoreDefaultArgs: [
-      "--mute-audio",
-      // '--enable-automation',
-    ],
+    ignoreDefaultArgs: ["--mute-audio", "--enable-automation"],
     env: {
       DISPLAY: ":1",
     },
