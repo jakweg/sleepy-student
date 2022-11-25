@@ -129,14 +129,14 @@ export const startTeamsSession = async (url: string, session: Session) => {
   }
 
   await frame.waitForSelector("#prejoin-join-button", {
-    timeout: 10_000,
+    timeout: 30_000,
   });
   session.assertActive();
   await frame.click("#prejoin-join-button");
 
   try {
     await frame.waitForSelector("#prejoin-join-button", {
-      timeout: 10_000,
+      timeout: 31_000,
       hidden: true,
     });
   } catch (e) {
