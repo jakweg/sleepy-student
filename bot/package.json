@@ -1,13 +1,13 @@
 {
   "scripts": {
-    "build": "esbuild --bundle --outdir=dist --external:puppeteer --external:@discordjs/voice --external:discord.js --external:dotenv --format=esm --platform=node src/main.ts src/lang/*",
+    "build": "esbuild --bundle --outdir=dist --external:puppeteer --external:@discordjs/voice --external:discord.js --external:dotenv --format=cjs --platform=node src/main.ts src/lang/*",
     "start": "node dist/main.js"
   },
-  "type": "module",
   "dependencies": {
     "dotenv": "16.0.3",
     "discord.js": "14.6.0",
     "@discordjs/voice": "0.13.0",
+    "libsodium-wrappers": "0.7.10",
     "puppeteer": "18.2.1",
     "esbuild": "0.15.10"
   }

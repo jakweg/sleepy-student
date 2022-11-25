@@ -6,7 +6,6 @@ services:
   bot:
     build: .
     restart: always
-    network_mode: "host"
     volumes:
       - ${RECORDINGS_PATH:?Path on the disk where to store ready recordings}:/recordings:rw
       - persistent:/persistent:rw

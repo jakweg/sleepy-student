@@ -1,11 +1,11 @@
-import { LANGUAGE } from './config'
+import { LANGUAGE } from "./config";
+import * as en_ from "./lang/en-US";
+import * as pl from "./lang/pl";
 
-const supportedLanguages = ['en-US', 'pl']
+const supportedLanguages = ["en-US", "pl"];
 if (!supportedLanguages.includes(LANGUAGE))
-    throw new Error('Language not supported ' + LANGUAGE)
+  throw new Error("Language not supported " + LANGUAGE);
 
-const importEn = () => import('./lang/en-US')
+export default LANGUAGE === "pl" ? pl : en_;
 
-export default { ...await import('./lang/' + LANGUAGE + '.js') as Awaited<ReturnType<typeof importEn>> }
-
-export const en = await importEn()
+export const en = en_;

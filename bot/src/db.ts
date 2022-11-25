@@ -1,4 +1,4 @@
-import { writeFile } from "fs/promises";
+import { readFile, writeFile } from "fs/promises";
 import { DB_PATH } from "./config";
 
 export type ScheduledRecording = Readonly<{
@@ -28,22 +28,22 @@ const initDb = async (): Promise<Database> => {
 };
 
 const loadDb = async (): Promise<Database> => {
-  // try {
-  return { scheduledRecordings: {}, pastRecordings: {} };
-  //     const parsed = JSON.parse(await readFile(DB_PATH, { encoding: 'utf8' }))
-  //     return parsed
-  // } catch (e) {
-  //     if (e.code === 'ENOENT') {
-  //         console.warn('Database load failed, attempt to initialize empty');
-  //         return await initDb()
-  //     }
+  try {
+    const parsed = JSON.parse(await readFile(DB_PATH, { encoding: "utf8" }));
+    return parsed;
+  } catch (e) {
+    if (e.code === "ENOENT") {
+      console.warn("Database load failed, attempt to initialize empty");
+      return await initDb();
+    }
 
-  //     console.error('Database load failed', e.message)
-  //     process.exit(1)
-  // }
+    console.error("Database load failed", e.message);
+    process.exit(1);
+  }
 };
 
-const instance = await loadDb();
+let instance: Database = null;
+loadDb().then((db) => (instance = db));
 
 const saveDb = async () => {
   await writeFile(DB_PATH, JSON.stringify(instance, undefined, 1), {
