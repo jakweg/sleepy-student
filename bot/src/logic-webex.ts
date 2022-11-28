@@ -140,34 +140,39 @@ export const fillCaptchaAndJoin = async (session: WebexSession, captcha: string 
     try { await frame.click('[data-doi="AUDIO:UNMUTE_SELF:MENU_CONTROL_BAR"]'); } catch (e) { }
 
     frame.waitForSelector('[title="Got it"]', { timeout: 5000 })
-        .then(() => frame.click('[title="Got it"]'))
+        .then((e) => e.click())
         .catch(e => void (e))
 
     sleep(6000)
         .then(() => frame.waitForSelector('[title="Got it"]', { timeout: 0 }))
-        .then(() => frame.click('[title="Got it"]'))
+        .then((e) => e.click())
         .catch(e => void (e))
 
     sleep(7000)
         .then(() => frame.waitForSelector('[data-doi="AUDIO:UNMUTE_SELF:MENU_CONTROL_BAR"]', { timeout: 10000 }))
-        .then(() => frame.click('[data-doi="AUDIO:UNMUTE_SELF:MENU_CONTROL_BAR"]'))
+        .then((e) => e.click())
         .catch(e => void (e))
 
 
     sleep(5000)
         .then(() => frame.waitForSelector('[data-doi="LAYOUT:GOT_IT:DIALOG_LAYOUT_FTE"]', { timeout: 0 }))
-        .then(() => frame.click('[data-doi="LAYOUT:GOT_IT:DIALOG_LAYOUT_FTE"]'))
+        .then((e) => e.click())
         .then(() => sleep(5000))
         .then(() => frame.waitForSelector('[data-doi="LAYOUT:GOT_IT:DIALOG_LAYOUT_FTE"]', { timeout: 0 }))
-        .then(() => frame.click('[data-doi="LAYOUT:GOT_IT:DIALOG_LAYOUT_FTE"]'))
+        .then((e) => e.click())
         .then(() => sleep(5000))
         .then(() => frame.waitForSelector('[data-doi="LAYOUT:GOT_IT:DIALOG_LAYOUT_FTE"]', { timeout: 0 }))
-        .then(() => frame.click('[data-doi="LAYOUT:GOT_IT:DIALOG_LAYOUT_FTE"]'))
+        .then((e) => e.click())
         .catch(e => void (e))
 
     sleep(10000)
         .then(() => frame.waitForSelector('[aria-label*="close"]', { timeout: 5000 }))
-        .then(() => frame.click('[aria-label*="close"]'))
+        .then((e) => e.click())
+        .catch(e => void (e))
+
+    sleep(12000)
+        .then(() => frame.waitForSelector('[data-title="Hide control bar"]', { timeout: 0 }))
+        .then((e) => e.click())
         .catch(e => void (e))
 
     // frame.waitForSelector('[data-doi="CHAT:OPEN_CHAT_PANEL:MENU_CONTROL_BAR"]', { timeout: 5000 })
