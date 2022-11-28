@@ -170,9 +170,19 @@ export const fillCaptchaAndJoin = async (session: WebexSession, captcha: string 
         .then((e) => e.click())
         .catch(e => void (e))
 
-    sleep(12000)
-        .then(() => frame.waitForSelector('[data-title="Hide control bar"]', { timeout: 0 }))
+    sleep(7000)
+        .then(() => frame.waitForSelector('[tabindex="3"]', { timeout: 1000 }))
+        .then(() => frame.evaluate(() => (document.querySelector('[tabindex="3"]') as any).click()))
+        .catch(e => console.error(e))
+
+    sleep(5000)
+        .then(() => frame.waitForSelector('[data-doi="LAYOUT:OPEN_LAYOUT_MENU:MAIN_LAYOUT"]', { timeout: 0 }))
         .then((e) => e.click())
+        .then(() => frame.waitForSelector('[data-doi="LAYOUT:SWITCH_FULLSCREEN_VIEW:MENU_LAYOUT"]', { timeout: 0 }))
+        .then((e) => e.click())
+        .then(() => frame.waitForSelector('.react-draggable button', { timeout: 0 }))
+        .then((e) => e.click())
+        .then(() => frame.waitForSelector('.react-draggable', { timeout: 0 }))
         .catch(e => void (e))
 
     // frame.waitForSelector('[data-doi="CHAT:OPEN_CHAT_PANEL:MENU_CONTROL_BAR"]', { timeout: 5000 })
