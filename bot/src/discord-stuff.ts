@@ -15,14 +15,10 @@ import {
   SlashCommandBuilder,
   SlashCommandStringOption,
   TextInputBuilder,
-  TextInputStyle,
+  TextInputStyle
 } from "discord.js";
 import { readFile } from "fs/promises";
-import {
-  ALLOWED_CHANNELS,
-  LANGUAGE,
-  MAX_MEETING_DURATION_MINUTES,
-} from "./config";
+import { ALLOWED_CHANNELS, MAX_MEETING_DURATION_MINUTES } from "./config";
 import { currentState, updateState } from "./current-state";
 import {
   deleteById,
@@ -31,7 +27,7 @@ import {
   findInPastIfNotUsedById,
   findInPastIfNotUsedByIdAndMarkUsed,
   getAll,
-  scheduleNewRecording,
+  scheduleNewRecording
 } from "./db";
 import intl, { en } from "./intl";
 import { fillCaptchaAndJoin } from "./logic-webex";
@@ -146,8 +142,7 @@ const handleStopRecordingClicked = async (
       new ActionRowBuilder<ButtonBuilder>().addComponents(
         new ButtonBuilder()
           .setCustomId(
-            `stop-recording-confirmed#${
-              sessionId ?? currentState.session?.sessionId ?? "any"
+            `stop-recording-confirmed#${sessionId ?? currentState.session?.sessionId ?? "any"
             }`
           )
           .setLabel(intl.YES)
@@ -284,8 +279,8 @@ const handleRecordRequest = async (
   const type = url?.includes("webex")
     ? "webex"
     : url?.includes("teams")
-    ? "teams"
-    : "invalid";
+      ? "teams"
+      : "invalid";
   if (type === "invalid") {
     await interaction.followUp({
       content: intl.RECORD_COMMAND_INVALID_PLATFORM,
@@ -556,8 +551,7 @@ const handleInteraction = async (interaction: Interaction<CacheType>) => {
   }
 
   console.log(
-    `Invoked ${interaction.type} ${interaction.toString()} by ${
-      interaction.user.username
+    `Invoked ${interaction.type} ${interaction.toString()} by ${interaction.user.username
     } (${interaction.user.id}) in ${interaction.channelId}`
   );
 
@@ -617,70 +611,76 @@ const createCommands = () => {
   return [
     new SlashCommandBuilder()
       .setName("record")
-      .setNameLocalizations({ [LANGUAGE]: intl.COMMAND_RECORD_NAME })
+      .setNameLocalizations({ [intl.LOCALE]: intl.COMMAND_RECORD_NAME })
       .setDescriptionLocalizations({
-        [LANGUAGE]: intl.COMMAND_RECORD_DESCRIPTION,
+        [intl.LOCALE]: intl.COMMAND_RECORD_DESCRIPTION,
       })
       .setDescription(en.COMMAND_RECORD_DESCRIPTION)
       .addStringOption(
         new SlashCommandStringOption()
           .setName("link")
-          .setNameLocalizations({ [LANGUAGE]: intl.COMMAND_RECORD_LINK_NAME })
+          .setNameLocalizations({
+            [intl.LOCALE]: intl.COMMAND_RECORD_LINK_NAME,
+          })
           .setDescription(en.COMMAND_RECORD_LINK_DESCRIPTION)
           .setDescriptionLocalizations({
-            [LANGUAGE]: intl.COMMAND_RECORD_LINK_DESCRIPTION,
+            [intl.LOCALE]: intl.COMMAND_RECORD_LINK_DESCRIPTION,
           })
           .setRequired(true)
       )
       .addStringOption(
         new SlashCommandStringOption()
           .setName("when")
-          .setNameLocalizations({ [LANGUAGE]: intl.COMMAND_RECORD_DATE_NAME })
+          .setNameLocalizations({
+            [intl.LOCALE]: intl.COMMAND_RECORD_DATE_NAME,
+          })
           .setDescription(en.COMMAND_RECORD_DATE_DESCRIPTION)
           .setDescriptionLocalizations({
-            [LANGUAGE]: intl.COMMAND_RECORD_DATE_DESCRIPTION,
+            [intl.LOCALE]: intl.COMMAND_RECORD_DATE_DESCRIPTION,
           })
           .setRequired(true)
       )
       .addStringOption(
         new SlashCommandStringOption()
           .setName("name")
-          .setNameLocalizations({ [LANGUAGE]: intl.COMMAND_RECORD_NAME_NAME })
+          .setNameLocalizations({
+            [intl.LOCALE]: intl.COMMAND_RECORD_NAME_NAME,
+          })
           .setDescription(en.COMMAND_RECORD_NAME_DESCRIPTION)
           .setDescriptionLocalizations({
-            [LANGUAGE]: intl.COMMAND_RECORD_NAME_DESCRIPTION,
+            [intl.LOCALE]: intl.COMMAND_RECORD_NAME_DESCRIPTION,
           })
           .setMaxLength(60)
           .setRequired(false)
       ),
     new SlashCommandBuilder()
       .setName("stop")
-      .setNameLocalizations({ [LANGUAGE]: intl.COMMAND_STOP_NAME })
+      .setNameLocalizations({ [intl.LOCALE]: intl.COMMAND_STOP_NAME })
       .setDescription(en.COMMAND_STOP_DESCRIPTION)
       .setDescriptionLocalizations({
-        [LANGUAGE]: intl.COMMAND_STOP_DESCRIPTION,
+        [intl.LOCALE]: intl.COMMAND_STOP_DESCRIPTION,
       }),
     new SlashCommandBuilder()
       .setName("upcoming")
-      .setNameLocalizations({ [LANGUAGE]: intl.COMMAND_UPCOMING_NAME })
+      .setNameLocalizations({ [intl.LOCALE]: intl.COMMAND_UPCOMING_NAME })
       .setDescription(en.COMMAND_UPCOMING_DESCRIPTION)
       .setDescriptionLocalizations({
-        [LANGUAGE]: intl.COMMAND_UPCOMING_DESCRIPTION,
+        [intl.LOCALE]: intl.COMMAND_UPCOMING_DESCRIPTION,
       }),
     new SlashCommandBuilder()
       .setName("details")
-      .setNameLocalizations({ [LANGUAGE]: intl.COMMAND_DETAILS_NAME })
+      .setNameLocalizations({ [intl.LOCALE]: intl.COMMAND_DETAILS_NAME })
       .setDescription(en.COMMAND_DETAILS_DESCRIPTION)
       .setDescriptionLocalizations({
-        [LANGUAGE]: intl.COMMAND_UPCOMING_DESCRIPTION,
+        [intl.LOCALE]: intl.COMMAND_UPCOMING_DESCRIPTION,
       })
       .addStringOption(
         new SlashCommandStringOption()
           .setName("id")
-          .setNameLocalizations({ [LANGUAGE]: intl.COMMAND_DETAILS_ID_NAME })
+          .setNameLocalizations({ [intl.LOCALE]: intl.COMMAND_DETAILS_ID_NAME })
           .setDescription(en.COMMAND_DETAILS_ID_DESCRIPTION)
           .setDescriptionLocalizations({
-            [LANGUAGE]: intl.COMMAND_DETAILS_ID_DESCRIPTION,
+            [intl.LOCALE]: intl.COMMAND_DETAILS_ID_DESCRIPTION,
           })
           .setRequired(true)
           .setAutocomplete(true)
@@ -688,7 +688,9 @@ const createCommands = () => {
     new SlashCommandBuilder()
       .setName("ss")
       .setDescription(en.COMMAND_SS_DESCRIPTION)
-      .setDescriptionLocalizations({ [LANGUAGE]: intl.COMMAND_SS_DESCRIPTION }),
+      .setDescriptionLocalizations({
+        [intl.LOCALE]: intl.COMMAND_SS_DESCRIPTION,
+      }),
   ];
 };
 

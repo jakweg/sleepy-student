@@ -1,6 +1,6 @@
 import { formatRelativeTime } from "../lang-utils"
 
-const LOCALE = 'en-US'
+export const LOCALE = 'en-US'
 const dateTimeFormat = new Intl.DateTimeFormat(LOCALE, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })
 const relativeTimeFormat = new Intl.RelativeTimeFormat(LOCALE, { style: 'long' })
 const pluralRules = new Intl.PluralRules(LOCALE)
