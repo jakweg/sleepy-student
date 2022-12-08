@@ -2,7 +2,7 @@ import { Page } from "puppeteer";
 import {
   MS_TEAMS_CREDENTIALS_LOGIN,
   MS_TEAMS_CREDENTIALS_ORIGINS,
-  MS_TEAMS_CREDENTIALS_PASSWORD,
+  MS_TEAMS_CREDENTIALS_PASSWORD
 } from "./config";
 import Session from "./session";
 import { sleep } from "./utils";
@@ -48,34 +48,39 @@ export const startTeamsSession = async (url: string, session: Session) => {
     session.assertActive();
     await page.evaluate(
       () =>
-        ((
-          (document.querySelector("input[type=email]") as HTMLInputElement) || {
-            value: "",
-          }
-        ).value = "")
+      ((
+        (document.querySelector("input[type=email]") as HTMLInputElement) || {
+          value: "",
+        }
+      ).value = "")
     );
     requireOriginForCredentials(page);
     try {
       await page.type("input[type=email]", MS_TEAMS_CREDENTIALS_LOGIN!, {
         delay: 20,
       });
-    } catch (e) {}
+    } catch (e) { }
     requireOriginForCredentials(page);
     try {
       await page.type("input[type=text]", MS_TEAMS_CREDENTIALS_LOGIN!, {
         delay: 20,
       });
-    } catch (e) {}
+    } catch (e) { }
     requireOriginForCredentials(page);
     await page.type("input[type=password]", MS_TEAMS_CREDENTIALS_PASSWORD!, {
       delay: 20,
     });
     await page.keyboard.press("Enter", { delay: 100 });
-    await page.waitForSelector("input[type=submit]", { hidden: true });
-    await page.waitForSelector("input[type=submit]", { timeout: 20_000 });
-    requireOriginForCredentials(page);
-    await page.click("input[type=submit]");
-    await sleep(10_000);
+    try {
+      await page.waitForSelector("input[type=submit]", { hidden: true });
+      await page.waitForSelector("input[type=submit]", { timeout: 20_000 });
+      requireOriginForCredentials(page);
+      await page.click("input[type=submit]");
+      await sleep(10_000);
+    } catch (e) {
+      await page.keyboard.press("Enter", { delay: 100 });
+      await sleep(5_000)
+    }
     session.assertActive();
   }
 
