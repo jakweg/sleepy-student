@@ -1,10 +1,9 @@
 import {
-  AudioResource,
-  createAudioPlayer,
-  createAudioResource,
-  joinVoiceChannel,
   NoSubscriberBehavior,
   VoiceConnectionStatus,
+  createAudioPlayer,
+  createAudioResource,
+  joinVoiceChannel
 } from "@discordjs/voice";
 import { VoiceBasedChannel } from "discord.js";
 import { BARKA_CHANNEL_ID, BARKA_DURATION } from "./config";
@@ -12,7 +11,6 @@ import { DISCORD } from "./main";
 
 const scheduleNextBarka = (
   channel: VoiceBasedChannel,
-  resource: AudioResource<null>
 ) => {
   const now = new Date();
   const target = new Date(
@@ -28,6 +26,7 @@ const scheduleNextBarka = (
   }
 
   setTimeout(() => {
+    const resource = createAudioResource("./assets/barka.mp3")
     const connection = joinVoiceChannel({
       channelId: channel.id,
       guildId: channel.guildId,
@@ -47,7 +46,7 @@ const scheduleNextBarka = (
       setTimeout(() => {
         connection.disconnect();
         player.stop();
-        scheduleNextBarka(channel, resource);
+        scheduleNextBarka(channel);
       }, BARKA_DURATION * 1000);
     });
   }, millisToSleep);
@@ -58,6 +57,6 @@ export const initPlayer = async () => {
   const channel = await DISCORD.channels.fetch(BARKA_CHANNEL_ID);
   if (channel.isVoiceBased() && channel.joinable) {
     const resource = createAudioResource("./assets/barka.mp3");
-    scheduleNextBarka(channel, resource);
+    scheduleNextBarka(channel);
   }
 };
