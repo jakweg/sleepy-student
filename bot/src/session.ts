@@ -1,5 +1,5 @@
 import { Message } from 'discord.js';
-import { rename } from 'fs/promises';
+import { rename, unlink } from 'fs/promises';
 import { Page } from 'puppeteer';
 import { AUDIO_BITRATE, FINAL_FILENAME_FORMAT, FRAMERATE, HEIGHT, RECORDINGS_PATH, VIDEO_CRF, WIDTH } from "./config";
 import { ScheduledRecording } from "./db";
@@ -166,7 +166,7 @@ export default class Session {
             this.recording.readyFilename = name
 
             this.updateMessage()
-            // await Promise.all([unlink(this.recording.videoPath), unlink(this.recording.audioPath)])
+            await Promise.all([unlink(this.recording.videoPath), unlink(this.recording.audioPath)])
         })
     }
 
