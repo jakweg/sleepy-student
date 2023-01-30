@@ -1,4 +1,5 @@
 import * as dotenv from "dotenv";
+import * as fs from 'fs/promises';
 dotenv.config();
 
 export const RECORDINGS_PATH = process.env.RECORDINGS_PATH || "/recordings";
@@ -10,9 +11,8 @@ export const HEIGHT = parseInt(process.env.HEIGHT!, 10) || 720;
 export const FINAL_FILENAME_FORMAT =
   process.env.FILENAME_FORMAT || "%name%-%month%-%day%";
 export const VIDEO_CRF = `${parseInt(process.env.VIDEO_CRF!, 10) || 38}`;
-export const AUDIO_BITRATE = `${
-  parseInt(process.env.AUDIO_BITRATE!, 10) || 32
-}`;
+export const AUDIO_BITRATE = `${parseInt(process.env.AUDIO_BITRATE!, 10) || 32
+  }`;
 export const FRAMERATE = `${parseInt(process.env.FRAMERATE!, 10) || 4}`;
 export const SCHEDULER_INTERVAL_MS =
   parseInt(process.env.SCHEDULER_INTERVAL_MS!, 10) || 60_000;
@@ -57,10 +57,14 @@ console.log(`Using config:
     MS_TEAMS_ORIGINS=${MS_TEAMS_CREDENTIALS_ORIGINS}
 `);
 
-// try {
-//     await fs.writeFile(`${RECORDINGS_PATH}/access-test`, '')
-//     await fs.unlink(`${RECORDINGS_PATH}/access-test`)
-// } catch (e) {
-//     console.error('Access test to ', RECORDINGS_PATH, 'failed', e?.message)
-//     process.exit(1)
-// }
+const doAccessTest = async () => {
+  try {
+    await fs.writeFile(`${RECORDINGS_PATH}/.access-test`, '')
+    await fs.unlink(`${RECORDINGS_PATH}/.access-test`)
+  } catch (e) {
+    console.error('Access test to ', RECORDINGS_PATH, 'failed', e?.message)
+    process.exit(1)
+  }
+}
+
+doAccessTest()
