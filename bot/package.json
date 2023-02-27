@@ -4,11 +4,11 @@
     "start": "node dist/main.js"
   },
   "dependencies": {
-    "dotenv": "16.0.3",
-    "discord.js": "14.7.1",
-    "@discordjs/voice": "0.14.0",
-    "libsodium-wrappers": "0.7.10",
-    "puppeteer": "19.6.2",
-    "esbuild": "0.17.5"
+    "dotenv": "^16.0.3",
+    "discord.js": "^14.7.1",
+    "@discordjs/voice": "^0.14.0",
+    "libsodium-wrappers": "^0.7.11",
+    "puppeteer": "^19.7.1",
+    "esbuild": "^0.17.8"
   }
 }

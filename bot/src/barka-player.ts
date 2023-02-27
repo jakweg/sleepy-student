@@ -26,7 +26,7 @@ const scheduleNextBarka = (
   }
 
   setTimeout(() => {
-    const resource = createAudioResource("./assets/barka.mp3")
+    const resource = createAudioResource("./assets/barka.mp3",)
     const connection = joinVoiceChannel({
       channelId: channel.id,
       guildId: channel.guildId,
@@ -56,7 +56,6 @@ export const initPlayer = async () => {
   if (!BARKA_CHANNEL_ID) return;
   const channel = await DISCORD.channels.fetch(BARKA_CHANNEL_ID);
   if (channel.isVoiceBased() && channel.joinable) {
-    const resource = createAudioResource("./assets/barka.mp3");
     scheduleNextBarka(channel);
   }
 };

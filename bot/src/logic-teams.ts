@@ -26,11 +26,28 @@ export const startTeamsSession = async (url: string, session: Session) => {
 
   let willLogin = true;
   try {
-    await page.waitForSelector("input[type=email]");
+    await page.waitForSelector("input[type=email]", { timeout: 20 * 1000 });
   } catch (e) {
     willLogin = false;
-    await page.waitForSelector("#ts-waffle-button");
+    try {
+      const link = await page.waitForSelector('a[aria-label="Select to sign-in"]', { timeout: 5 * 1000 })
+      link.click()
+      // const nickInput = await page.waitForSelector('input[name="username"]#username', { timeout: 5 * 1000 })
+      // await clearInput(nickInput)
+      // for (const c of randomizeLettersCase(WEBEX_NAME)) {
+      //   await sleep(Math.random() * 300 + 300)
+      //   await nickInput.type(c)
+      // }
+      // page.keyboard.press('Enter');
+      // nickJoined = true
+      willLogin = true
+    } catch (_) {
+      // ignore, probably normal login
+      await page.waitForSelector("#ts-waffle-button");
+    }
+
   }
+
   if (willLogin) {
     await page.waitForSelector("input[type=email]");
     requireOriginForCredentials(page);
@@ -89,43 +106,50 @@ export const startTeamsSession = async (url: string, session: Session) => {
 
   session.assertActive();
   try {
-    await page.waitForSelector("button[type=button].icons-call-jump-in", {
-      timeout: 60_000,
-    });
-  } catch (e) {
-    console.warn("Failed to find join button, trying loading page again");
+    if (!page.frames().find((e) => e.name().includes("experience")))
 
-    await page.goto("about:blank", { waitUntil: "domcontentloaded" });
-    await sleep(500);
-    await page.goto(url, { waitUntil: "domcontentloaded" });
-
-    // await page.click('.btn-group.app-tabs-list-item:not(.app-tabs-selected)')
-    // await sleep(2000)
-    // await page.click('.btn-group.app-tabs-list-item:not(.app-tabs-selected)')
-    // await sleep(2000)
-    // await page.click('.start-meetup')
-    // await sleep(5000)
-    // await page.waitForSelector('#leave-calling-pre-join')
-    // await page.click('#leave-calling-pre-join')
-    // page.screenshot({ path: '/recordings/debug2.png', })
-
-    try {
       await page.waitForSelector("button[type=button].icons-call-jump-in", {
-        timeout: 60_000,
+        timeout: 20_000,
       });
-    } catch (e) {
+  } catch (e) {
+    if (!page.frames().find((e) => e.name().includes("experience"))) {
       console.warn("Failed to find join button, trying loading page again");
 
       await page.goto("about:blank", { waitUntil: "domcontentloaded" });
       await sleep(500);
       await page.goto(url, { waitUntil: "domcontentloaded" });
 
-      await page.waitForSelector("button[type=button].icons-call-jump-in", {
-        timeout: 60_000,
-      });
+      // await page.click('.btn-group.app-tabs-list-item:not(.app-tabs-selected)')
+      // await sleep(2000)
+      // await page.click('.btn-group.app-tabs-list-item:not(.app-tabs-selected)')
+      // await sleep(2000)
+      // await page.click('.start-meetup')
+      // await sleep(5000)
+      // await page.waitForSelector('#leave-calling-pre-join')
+      // await page.click('#leave-calling-pre-join')
+      // page.screenshot({ path: '/recordings/debug2.png', })
+
+      try {
+        await page.waitForSelector("button[type=button].icons-call-jump-in", {
+          timeout: 60_000,
+        });
+      } catch (e) {
+        console.warn("Failed to find join button, trying loading page again");
+
+        await page.goto("about:blank", { waitUntil: "domcontentloaded" });
+        await sleep(500);
+        await page.goto(url, { waitUntil: "domcontentloaded" });
+
+        await page.waitForSelector("button[type=button].icons-call-jump-in", {
+          timeout: 60_000,
+        });
+      }
     }
   }
-  await page.click("button[type=button].icons-call-jump-in");
+
+  try {
+    await page.click("button[type=button].icons-call-jump-in");
+  } catch (_) { }
 
   let frame = page.frames().find((e) => e.name().includes("experience"));
   while (!frame) {

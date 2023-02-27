@@ -1,7 +1,7 @@
 import { ElementHandle, Page } from "puppeteer"
 import { RECORDINGS_PATH, WEBEX_MAIL, WEBEX_NAME } from "./config"
 import { WebexSession } from "./session"
-import { sleep } from "./utils"
+import { clearInput, randomizeLettersCase, sleep } from "./utils"
 
 export const createWebexSession = async (page: Page, url: string): Promise<{ captchaImage: Buffer | 'not-needed' }> => {
     url = url.replace('launchApp=true', '')
@@ -36,21 +36,6 @@ export const createWebexSession = async (page: Page, url: string): Promise<{ cap
     await sleep(1000)
     const buffer = await getCaptchaImage()
     return { captchaImage: buffer }
-}
-
-export const randomizeLettersCase = (text: string, upperProbability: number = 0.2) => {
-    return text.split('').map(e => Math.random() < upperProbability ? e.toLocaleUpperCase() : e.toLocaleLowerCase()).join('')
-}
-
-const clearInput = async (input: ElementHandle<HTMLInputElement>) => {
-    const content = await input.evaluate(element => (element).value, input)
-    if (typeof content === 'string') {
-        const size = content.length;
-        for (let i = 0; i < size; i++) {
-            await sleep(100)
-            await input.press('Backspace');
-        }
-    }
 }
 
 export const fillCaptchaAndJoin = async (session: WebexSession, captcha: string | null,): Promise<{ isMeetingStopped: () => Promise<boolean> } | Buffer> => {
