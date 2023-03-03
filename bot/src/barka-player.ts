@@ -35,17 +35,24 @@ const scheduleNextBarka = (
       selfMute: false,
     });
 
-    connection.on(VoiceConnectionStatus.Ready, () => {
+    connection.once(VoiceConnectionStatus.Ready, () => {
       const player = createAudioPlayer({
         behaviors: {
           noSubscriber: NoSubscriberBehavior.Play,
         },
       });
+      resource.audioPlayer?.stop(true)
       player.play(resource);
       connection.subscribe(player);
       setTimeout(() => {
-        connection.disconnect();
-        player.stop();
+        try {
+          player.stop(true);
+          resource?.audioPlayer?.stop(true)
+        } catch (_) { }
+        try {
+          connection.disconnect();
+          connection.destroy()
+        } catch (_) { }
         scheduleNextBarka(channel);
       }, BARKA_DURATION * 1000);
     });
