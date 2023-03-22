@@ -3,15 +3,13 @@ import {
   VoiceConnectionStatus,
   createAudioPlayer,
   createAudioResource,
-  joinVoiceChannel
+  joinVoiceChannel,
 } from "@discordjs/voice";
 import { VoiceBasedChannel } from "discord.js";
 import { BARKA_CHANNEL_ID, BARKA_DURATION } from "./config";
 import { DISCORD } from "./main";
 
-const scheduleNextBarka = (
-  channel: VoiceBasedChannel,
-) => {
+const scheduleNextBarka = (channel: VoiceBasedChannel) => {
   const now = new Date();
   const target = new Date(
     now.getFullYear(),
@@ -26,7 +24,7 @@ const scheduleNextBarka = (
   }
 
   setTimeout(() => {
-    const resource = createAudioResource("./assets/barka.mp3",)
+    const resource = createAudioResource("./assets/barka.mp3");
     const connection = joinVoiceChannel({
       channelId: channel.id,
       guildId: channel.guildId,
@@ -41,18 +39,18 @@ const scheduleNextBarka = (
           noSubscriber: NoSubscriberBehavior.Play,
         },
       });
-      resource.audioPlayer?.stop(true)
+      resource.audioPlayer?.stop(true);
       player.play(resource);
       connection.subscribe(player);
       setTimeout(() => {
         try {
           player.stop(true);
-          resource?.audioPlayer?.stop(true)
-        } catch (_) { }
+          resource?.audioPlayer?.stop(true);
+        } catch (_) {}
         try {
           connection.disconnect();
-          connection.destroy()
-        } catch (_) { }
+          connection.destroy();
+        } catch (_) {}
         scheduleNextBarka(channel);
       }, BARKA_DURATION * 1000);
     });
