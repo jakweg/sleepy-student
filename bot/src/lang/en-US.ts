@@ -21,6 +21,8 @@ export const MAY_NEED_YOUR_HELP_WITH_CAPTCHA = 'May need your help with captcha'
 
 export const STOP_RECORDING = `Stop the recording`
 
+export const RETRY_FAILED_RECORDING = `Try to join again`
+
 export const recordingFinishedBy = (by: string) => `Recording has been stopped by <@${by}>`
 export const recordingFinishedTimeout = (afterMinutes: number) => `Recording has been stopped automatically after ${afterMinutes} minutes`
 export const recordingFinishedClosed = () => `Recording was stopped, because meeting also closed`

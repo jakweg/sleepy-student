@@ -21,6 +21,8 @@ export const MAY_NEED_YOUR_HELP_WITH_CAPTCHA = 'Mogę potrzebować Twojej pomocy
 
 export const STOP_RECORDING = `Zakończ nagrywanie`
 
+export const RETRY_FAILED_RECORDING = `Spróbuj ponownie dołączyć`
+
 export const recordingFinishedBy = (by: string) => `Nagrywanie zatrzymane przez <@${by}>`
 export const recordingFinishedTimeout = (afterMinutes: number) => `Nagrywanie zatrzymane automatycznie po ${afterMinutes} minutach`
 export const recordingFinishedClosed = () => `Spotkanie zakończyło się`

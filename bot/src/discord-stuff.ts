@@ -452,6 +452,56 @@ const handleScheduleNextWeek = async (
   }
 };
 
+const handleRetryJoining = async (
+  interaction: ButtonInteraction<CacheType>,
+  id: string | null
+) => {
+  const oldEntry = findInPastIfNotUsedById(id || "");
+  if (!oldEntry) {
+    await interaction.reply({
+      content: `Not found this meeting`,
+      ephemeral: true,
+    });
+    return;
+  }
+
+  try {
+    const oldEntry = await findInPastIfNotUsedByIdAndMarkUsed(id || "");
+    if (!oldEntry) throw new Error("Not found!");
+
+    const newScheduled = await scheduleNewRecording({
+      ...oldEntry,
+      timestamp: Date.now(),
+      scheduledBy: interaction.user.id,
+    });
+
+    await interaction.reply({
+      content: intl.scheduleNextWeekCommandConfirmation(
+        newScheduled.name,
+        newScheduled.timestamp
+      ),
+      ephemeral: true,
+    });
+
+    const originalMessage = await interaction.message.fetch(true);
+
+    const row = originalMessage.components[0].toJSON();
+    const retryButton = row.components.find((e) =>
+      (e as any)["custom_id"]?.startsWith("retry-recording#")
+    );
+    if (retryButton) {
+      row.components.splice(row.components.indexOf(retryButton), 1);
+      originalMessage.edit({ components: [row] }).catch((e) => void e);
+    }
+  } catch (e) {
+    console.error(e.message);
+    await interaction.reply({
+      content: `Something went wrong`,
+      ephemeral: true,
+    });
+  }
+};
+
 const handleNextRecordingsRequest = async (
   interaction: ChatInputCommandInteraction<CacheType>
 ) => {
@@ -602,6 +652,9 @@ const handleInteraction = async (interaction: Interaction<CacheType>) => {
         break;
       case "schedule-next-week":
         await handleScheduleNextWeek(interaction, sessionId);
+        break;
+      case "retry-recording":
+        await handleRetryJoining(interaction, sessionId);
         break;
     }
   }
