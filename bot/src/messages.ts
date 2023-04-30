@@ -15,7 +15,7 @@ const fatalError = (
   error: string
 ): MessageCreateOptions => {
   return {
-    content: `Tried joining ${entry.type} but failed: ${error}`,
+    content: intl.failedJoining(entry.type, error),
     components: [
       new ActionRowBuilder().addComponents(
         new ButtonBuilder()
@@ -24,7 +24,7 @@ const fatalError = (
           .setStyle(ButtonStyle.Link),
         new ButtonBuilder()
           .setCustomId(`retry-recording#${entry.id}`)
-          .setLabel(intl.STOP_RECORDING)
+          .setLabel(intl.RETRY_FAILED_RECORDING)
           .setStyle(ButtonStyle.Secondary)
       ) as any,
     ],
