@@ -1,181 +1,324 @@
-import { ElementHandle, Page } from "puppeteer"
-import { RECORDINGS_PATH, WEBEX_MAIL, WEBEX_NAME } from "./config"
-import { WebexSession } from "./session"
-import { clearInput, randomizeLettersCase, sleep } from "./utils"
+import cp from "child_process";
+import { ElementHandle, Page } from "puppeteer";
+import { RECORDINGS_PATH, WEBEX_MAIL, WEBEX_NAME } from "./config";
+import { WebexSession } from "./session";
+import { clearInput, randomizeLettersCase, sleep } from "./utils";
 
-export const createWebexSession = async (page: Page, url: string): Promise<{ captchaImage: Buffer | 'not-needed' }> => {
-    url = url.replace('launchApp=true', '')
-    await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36')
-    await page.browserContext().overridePermissions(url, ['microphone', 'camera'])
-    await page.goto(url, { waitUntil: 'domcontentloaded' })
+export const createWebexSession = async (
+  page: Page,
+  url: string
+): Promise<{ captchaImage: Buffer | "not-needed" }> => {
+  url = url.replace("launchApp=true", "");
+  await page.setUserAgent(
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36"
+  );
+  await page
+    .browserContext()
+    .overridePermissions(url, ["microphone", "camera"]);
+  await page.goto(url, { waitUntil: "domcontentloaded" });
 
-    try {
-        await page.waitForSelector('#push_download_join_by_browser', { timeout: 2000 })
-        await page.click('#push_download_join_by_browser')
-    } catch (e) {
+  await sleep(100)
+    .then(() =>
+      page.waitForSelector(".cookie-banner-btnContainer button", {
+        timeout: 1000,
+      })
+    )
+    .then((e) => e.click())
+    .catch((e) => void e);
+
+  try {
+    await (
+      await page.waitForSelector("#push_download_join_by_browser", {
+        timeout: 5000,
+      })
+    ).click();
+  } catch (e) {}
+
+  try {
+    const handle = await page.waitForXPath(
+      `//a[@id="push_download_detect_link"][contains(., 'Join from your browser')]`,
+      {
+        timeout: 100,
+      }
+    );
+    await (handle as any).click();
+    await sleep(1000);
+
+    await page.evaluate((e: any) => {
+      (e as any).click();
+      return (e as any).textContent;
+    }, handle);
+  } catch (e) {
+    console.error(e);
+  }
+
+  try {
+    const btn = await (
+      await page.waitForFrame((f) =>
+        f.url().startsWith("https://web.webex.com/meeting")
+      )
+    ).waitForSelector(
+      `[data-test="auth-crosslaunch-meeting-start-guest-join-button"]`,
+      {
+        timeout: 10000,
+      }
+    );
+    await btn.evaluateHandle((e) => (e as any).click());
+  } catch (e) {
+    console.error(e);
+  }
+
+  const getCaptchaImage = async (): Promise<Buffer | "not-needed"> => {
+    for (let i = 0; i < 10; ++i) {
+      const img = (
+        await Promise.all(
+          page.frames().map((e) => e.$(`[alt="Captcha image"]`))
+        )
+      ).find((e) => e);
+      if (img) {
+        await sleep(1000);
+        return (await img.screenshot({
+          captureBeyondViewport: true,
+          type: "png",
+        })) as Buffer;
+      }
+
+      const nameInput = (
+        await Promise.all(
+          page.frames().map((e) => e.$('[placeholder="Email address"]'))
+        )
+      ).find((e) => e);
+      if (nameInput) return "not-needed";
+
+      await sleep(1000);
     }
+    await page.screenshot({
+      captureBeyondViewport: true,
+      path: `${RECORDINGS_PATH}/debug.png`,
+    });
+    throw new Error("Failed to get verification image");
+  };
 
-    const getCaptchaImage = async (): Promise<Buffer | 'not-needed'> => {
-        for (let i = 0; i < 10; ++i) {
-            const img = (await Promise.all((page.frames()).map(e => e.$('#verificationImage')))).find(e => e)
-            if (img) {
-                await sleep(1000);
-                return await img.screenshot({ captureBeyondViewport: true, type: 'png' }) as Buffer
-            }
+  await sleep(1000);
+  const buffer = await getCaptchaImage();
+  return { captchaImage: buffer };
+};
 
-            const nameInput = (await Promise.all((page.frames()).map(e => e.$('[placeholder="Email address"]')))).find(e => e)
-            if (nameInput)
-                return 'not-needed'
+export const fillCaptchaAndJoin = async (
+  session: WebexSession,
+  captcha: string | null
+): Promise<{ isMeetingStopped: () => Promise<boolean> } | Buffer> => {
+  session.assertActive();
+  const page = session.page;
+  let frameIndex = (
+    await Promise.all(page.frames().map((e) => e.$(`[aria-label="Next"]`)))
+  ).findIndex((e) => e);
+  let frame = page.frames()[frameIndex];
+  if (!frame) throw new Error("missing inputs frame");
 
-            await sleep(1000);
-        }
-        await page.screenshot({ captureBeyondViewport: true, path: `${RECORDINGS_PATH}/debug.png` })
-        throw new Error('Failed to get verification image')
-    }
+  session.assertActive();
+  const results = (await frame.$$(
+    ".login-layout-body input"
+  )) as ElementHandle<HTMLInputElement>[];
+  if (!results) throw new Error("missing inputs");
+  const placeholders = await Promise.all(
+    results.map((i) => i.getProperty("placeholder").then((e) => e.jsonValue()))
+  );
+  for (let i = 0; i < 10; ++i) {
+    cp.execSync("xdotool key Escape", {
+      env: { DISPLAY: ":1" },
+    });
+    await sleep(100);
+  }
 
-    await sleep(1000)
-    const buffer = await getCaptchaImage()
-    return { captchaImage: buffer }
-}
+  await page.focus("body");
+  await sleep(300);
+  const name = results.find((e, i) => placeholders[i].includes("name"));
+  if (!name) throw new Error("missing name input");
 
-export const fillCaptchaAndJoin = async (session: WebexSession, captcha: string | null,): Promise<{ isMeetingStopped: () => Promise<boolean> } | Buffer> => {
-    session.assertActive()
-    const page = session.page
-    let frameIndex = (await Promise.all(page.frames().map(e => e.$('#guest_next-btn')))).findIndex(e => e)
-    let frame = page.frames()[frameIndex]
-    if (!frame) throw new Error('missing inputs frame')
+  await name.focus();
+  await clearInput(name);
+  for (const c of randomizeLettersCase(WEBEX_NAME)) {
+    await sleep(Math.random() * 300 + 300);
+    await page.keyboard.type(c);
+    // cp.execSync("xdotool key " + c.substring(0, 1), { env: { DISPLAY: ":1" } });
+    // await name.type(c);
+  }
 
-    session.assertActive()
-    const results = await frame.$$('#meetingSimpleContainer input') as ElementHandle<HTMLInputElement>[]
-    if (!results) throw new Error('missing inputs')
-
-    await page.focus('body')
-    await sleep(300)
-    const [name, mail, characters] = results
-    await clearInput(name)
-    for (const c of randomizeLettersCase(WEBEX_NAME)) {
-        await sleep(Math.random() * 300 + 300)
-        await name.type(c)
-    }
-
-    session.assertActive()
-    await sleep(Math.random() * 500 + 100)
-    await clearInput(mail)
+  const mail = results.find((e, i) => placeholders[i].includes("mail"));
+  //   if (!mail) throw new Error("missing mail input");
+  if (!mail) console.warn("missing mail input");
+  else {
+    session.assertActive();
+    await sleep(Math.random() * 500 + 100);
+    await mail.focus();
+    await clearInput(mail);
 
     for (const c of WEBEX_MAIL) {
-        await sleep(Math.random() * 300 + 300)
-        await mail.type(c)
+      await sleep(Math.random() * 300 + 300);
+      await page.keyboard.type(c);
+      //   cp.execSync("xdotool key " + c.substring(0, 1), {
+      //     env: { DISPLAY: ":1" },
+      //   });
+      //   await mail.type(c);
     }
+  }
 
-    if (characters && captcha) {
-        await clearInput(characters)
-        await sleep(Math.random() * 500 + 100)
-        for (const c of captcha) {
-            await sleep(Math.random() * 300 + 300)
-            await characters.type(c)
+  const characters = results.find((e, i) =>
+    placeholders[i].includes("text in the image")
+  );
+  if (!characters) throw new Error("missing captcha input");
+  if (characters && captcha) {
+    await characters.focus();
+    await clearInput(characters);
+    await sleep(Math.random() * 500 + 100);
+    for (const c of captcha) {
+      await sleep(Math.random() * 300 + 300);
+      await page.keyboard.type(c);
+      //   cp.execSync("xdotool key " + c.substring(0, 1), {
+      //     env: { DISPLAY: ":1" },
+      //   });
+      //   await characters.type(c);
+    }
+  }
+  await sleep(300);
+  session.assertActive();
+  await frame.click(`[aria-label="Next"]`);
+  const parentFrame = frame;
+
+  for (let i = 0; i < 20; ++i) {
+    frameIndex = (
+      await Promise.all(
+        page.frames().map((e) => e.$('[aria-label="Join meeting"]'))
+      )
+    ).findIndex((e) => e);
+    frame = page.frames()[frameIndex];
+    if (frame) break;
+
+    if (await parentFrame.$('[aria-label="Next"][aria-disabled="true"]')) {
+      const img = (
+        await Promise.all(
+          page.frames().map((e) => e.$(`[alt="Captcha image"]`))
+        )
+      ).find((e) => e);
+      if (img) {
+        await sleep(3000);
+        try {
+          return (await img.screenshot({
+            captureBeyondViewport: true,
+            type: "png",
+          })) as Buffer;
+        } catch (e) {
+          // ignore
         }
-    }
-    await sleep(300)
-    session.assertActive()
-    await frame.click('#guest_next-btn')
-    const parentFrame = frame
-
-    for (let i = 0; i < 20; ++i) {
-        frameIndex = (await Promise.all(page.frames().map(e => e.$('[data-doi="MEETING:JOIN_MEETING:MEETSIMPLE_INTERSTITIAL"]')))).findIndex(e => e)
-        frame = page.frames()[frameIndex]
-        if (frame) break
-
-        if (parentFrame.$('#guest_next-btn[aria-disabled="true"]')) {
-            const img = (await Promise.all((page.frames()).map(e => e.$('#verificationImage')))).find(e => e)
-            if (img) {
-                await sleep(3000);
-                try {
-                    return await img.screenshot({ captureBeyondViewport: true, type: 'png' }) as Buffer
-                } catch (e) {
-                    // ignore
-                }
-            }
-        }
-
-        await sleep(1000)
-    }
-    session.assertActive()
-    if (!frame) throw new Error('missing join button')
-    await sleep(1000)
-    try { await frame.click('[data-doi="VIDEO:STOP_VIDEO:MEETSIMPLE_INTERSTITIAL"]'); await sleep(500) } catch (e) { }
-    await frame.click('[data-doi="MEETING:JOIN_MEETING:MEETSIMPLE_INTERSTITIAL"]'); await sleep(500)
-    session.assertActive()
-    try { await frame.click('[data-doi="VIDEO:JOIN_MEETING:MEETSIMPLE_INTERSTITIAL"]'); } catch (e) { }
-
-    const waitToBeJoined = async () => {
-        while (true) {
-            const isMeetHidden = await frame.evaluate(() => document.getElementById('meetsimple')?.style?.display === 'none')
-            if (isMeetHidden)
-                return
-
-            session.assertActive()
-            await sleep(1000)
-        }
+      }
     }
 
-    await waitToBeJoined()
+    await sleep(1000);
+  }
+  session.assertActive();
+  if (!frame) throw new Error("missing join button");
 
-    session.assertActive()
-    try { await frame.click('[data-doi="AUDIO:MUTE_SELF:MEETSIMPLE_INTERSTITIAL"]'); } catch (e) { }
-    try { await frame.click('[data-doi="AUDIO:UNMUTE_SELF:MENU_CONTROL_BAR"]'); } catch (e) { }
+  await frame.click('[aria-label="Join meeting"]');
+  await sleep(500);
+  session.assertActive();
+  try {
+    await frame.click('[aria-label="Join meeting"]');
+  } catch (e) {}
 
-    frame.waitForSelector('[title="Got it"]', { timeout: 5000 })
-        .then((e) => e.click())
-        .catch(e => void (e))
+  const waitToBeJoined = async () => {
+    while (true) {
+      const isWaiting = await frame.evaluate(
+        () => !!document.getElementById(`remote_stream_placeholder_message`)
+      );
+      if (!isWaiting) return;
 
-    sleep(6000)
-        .then(() => frame.waitForSelector('[title="Got it"]', { timeout: 0 }))
-        .then((e) => e.click())
-        .catch(e => void (e))
-
-    sleep(7000)
-        .then(() => frame.waitForSelector('[data-doi="AUDIO:UNMUTE_SELF:MENU_CONTROL_BAR"]', { timeout: 10000 }))
-        .then((e) => e.click())
-        .catch(e => void (e))
-
-
-    sleep(5000)
-        .then(() => frame.waitForSelector('[data-doi="LAYOUT:GOT_IT:DIALOG_LAYOUT_FTE"]', { timeout: 0 }))
-        .then((e) => e.click())
-        .then(() => sleep(5000))
-        .then(() => frame.waitForSelector('[data-doi="LAYOUT:GOT_IT:DIALOG_LAYOUT_FTE"]', { timeout: 0 }))
-        .then((e) => e.click())
-        .then(() => sleep(5000))
-        .then(() => frame.waitForSelector('[data-doi="LAYOUT:GOT_IT:DIALOG_LAYOUT_FTE"]', { timeout: 0 }))
-        .then((e) => e.click())
-        .catch(e => void (e))
-
-    sleep(10000)
-        .then(() => frame.waitForSelector('[aria-label*="close"]', { timeout: 5000 }))
-        .then((e) => e.click())
-        .catch(e => void (e))
-
-    sleep(7000)
-        .then(() => frame.waitForSelector('[tabindex="3"]', { timeout: 1000 }))
-        .then(() => frame.evaluate(() => (document.querySelector('[tabindex="3"]') as any).click()))
-        .catch(e => console.error(e))
-
-    sleep(5000)
-        .then(() => frame.waitForSelector('[data-doi="LAYOUT:OPEN_LAYOUT_MENU:MAIN_LAYOUT"]', { timeout: 0 }))
-        .then((e) => e.click())
-        .then(() => frame.waitForSelector('[data-doi="LAYOUT:SWITCH_FULLSCREEN_VIEW:MENU_LAYOUT"]', { timeout: 0 }))
-        .then((e) => e.click())
-        .then(() => frame.waitForSelector('.react-draggable button', { timeout: 0 }))
-        .then((e) => e.click())
-        .then(() => frame.waitForSelector('.react-draggable', { timeout: 0 }))
-        .catch(e => void (e))
-
-    // frame.waitForSelector('[data-doi="CHAT:OPEN_CHAT_PANEL:MENU_CONTROL_BAR"]', { timeout: 5000 })
-    //     .then(() => sleep(1000))
-    //     .then(() => frame.click('[data-doi="CHAT:OPEN_CHAT_PANEL:MENU_CONTROL_BAR"]'))
-    //     .catch(e => void (e))
-
-    return {
-        isMeetingStopped: async () => !!(await frame.$('[aria-label="The meeting has ended."]')),
+      session.assertActive();
+      await sleep(1000);
     }
-}
+  };
+
+  await waitToBeJoined();
+
+  session.assertActive();
+
+  frame
+    .waitForSelector('[title="Got it"]', { timeout: 5000 })
+    .then((e) => e.click())
+    .catch((e) => void e);
+
+  sleep(6000)
+    .then(() => frame.waitForSelector('[title="Got it"]', { timeout: 0 }))
+    .then((e) => e.click())
+    .catch((e) => void e);
+
+  sleep(10000)
+    .then(() =>
+      Promise.all(
+        page.frames().map((e) => e.$('[aria-label="Hide control bar"]'))
+      )
+    )
+    .then((e) => e.find((e) => !!e).click())
+    .catch((e) => void e);
+
+  sleep(10000)
+    .then(() =>
+      Promise.all(
+        page
+          .frames()
+          .map((e) =>
+            e.evaluate(() =>
+              [...document.querySelectorAll("button")]
+                .find((e) => e.textContent.includes("Reject"))
+                ?.click()
+            )
+          )
+      )
+    )
+    .catch((e) => void e);
+
+  sleep(10000)
+    .then(() =>
+      Promise.all(
+        page
+          .frames()
+          .map((e) =>
+            e.evaluate(() =>
+              document
+                .querySelector(`[data-test="call_controls_wrap"]`)
+                ?.remove()
+            )
+          )
+      )
+    )
+    .catch((e) => void e);
+  //   sleep(10000)
+  //     .then(() =>
+  //       Promise.all(
+  //         page
+  //           .frames()
+  //           .map((e) =>
+  //             e.evaluate(() =>
+  //               document
+  //                 .querySelector(`[data-test="grid-layout"]`)
+  //                 ?.parentElement?.parentElement?.parentElement?.parentElement?.parentElement?.remove()
+  //             )
+  //           )
+  //       )
+  //     )
+  //     .catch((e) => void e);
+
+  sleep(10000)
+    .then(() =>
+      frame.waitForSelector('[aria-label*="close"]', { timeout: 5000 })
+    )
+    .then((e) => e.click())
+    .catch((e) => void e);
+
+  return {
+    isMeetingStopped: async () =>
+      !!(await frame.evaluate(() =>
+        document.body.textContent.includes("The meeting has ended.")
+      )),
+  };
+};
