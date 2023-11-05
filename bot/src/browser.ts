@@ -32,23 +32,26 @@ export const launch = async () => {
   });
 
   const page = await browser.newPage();
-  await page.goto("chrome://settings/passwords", {
+  await page.goto("chrome://password-manager/passwords", {
     waitUntil: "networkidle2",
   });
-  await page.evaluate(() =>
+  await page.evaluate(() => {
     (
       document
-        .querySelector("body > settings-ui")
-        .shadowRoot.querySelector("#main")
-        .shadowRoot.querySelector("settings-basic-page")
-        .shadowRoot.querySelector(
-          "#basicPage > settings-section.expanded > settings-autofill-page"
-        )
-        .shadowRoot.querySelector("#passwordSection")
-        .shadowRoot.querySelector("#passwordToggle")
-        .shadowRoot.querySelector("#control") as any
-    )?.click()
-  );
+        .querySelector("password-manager-app")
+        .shadowRoot.querySelector("password-manager-side-bar")
+        .shadowRoot.querySelector("#settings") as any
+    )?.click();
+    const toggle = document
+      .querySelector("body > password-manager-app")
+      .shadowRoot.querySelector("#settings")
+      .shadowRoot.querySelector("#passwordToggle")
+      .shadowRoot.querySelector("#control");
+
+    if (toggle.getAttribute("aria-pressed") !== "false") {
+      (toggle as any).click();
+    }
+  });
   await sleep(500);
   await page.close();
 
