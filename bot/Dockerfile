@@ -1,4 +1,4 @@
-FROM node:16
+FROM --platform=linux/amd64 node:20
 WORKDIR /usr/src/app
 RUN apt update
 RUN apt-get install -y wget
