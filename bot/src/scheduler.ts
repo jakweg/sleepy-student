@@ -5,6 +5,7 @@ import { advanceWebexAndJoin } from "./discord-stuff";
 import { observeMeetingClosedState, startTeamsSession } from "./logic-teams";
 import { createWebexSession } from "./logic-webex";
 import { DISCORD } from "./main";
+import { spawn } from './process';
 import Session, { WebexSession } from "./session";
 
 const startWebex = async (entry: ScheduledRecording) => {
@@ -76,6 +77,7 @@ const doCheck = async () => {
     console.log(entry);
 
     session.do(async () => {
+        spawn(["pulseaudio", "--start"]);
         if (entry.type === 'webex') {
             await startWebex(entry)
         } else if (entry.type === 'teams') {

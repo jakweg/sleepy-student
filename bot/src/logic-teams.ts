@@ -3,6 +3,7 @@ import {
   MS_TEAMS_CREDENTIALS_LOGIN,
   MS_TEAMS_CREDENTIALS_ORIGINS,
   MS_TEAMS_CREDENTIALS_PASSWORD,
+  WEBEX_NAME,
 } from "./config";
 import Session from "./session";
 import { sleep } from "./utils";
@@ -55,10 +56,7 @@ export const startTeamsSession = async (url: string, session: Session) => {
       // page.keyboard.press('Enter');
       // nickJoined = true
       willLogin = true;
-    } catch (_) {
-      // ignore, probably normal login
-      await page.waitForSelector("#ts-waffle-button");
-    }
+    } catch (_) {}
   }
 
   if (willLogin) {
@@ -121,41 +119,41 @@ export const startTeamsSession = async (url: string, session: Session) => {
   try {
     if (!page.frames().find((e) => e.name().includes("experience")))
       await page.waitForSelector("button[type=button].icons-call-jump-in", {
-        timeout: 20_000,
+        timeout: 5_000,
       });
   } catch (e) {
     if (!page.frames().find((e) => e.name().includes("experience"))) {
       console.warn("Failed to find join button, trying loading page again");
 
-      await page.goto("about:blank", { waitUntil: "domcontentloaded" });
-      await sleep(500);
-      await page.goto(url, { waitUntil: "domcontentloaded" });
+      // await page.goto("about:blank", { waitUntil: "domcontentloaded" });
+      // await sleep(500);
+      // await page.goto(url, { waitUntil: "domcontentloaded" });
 
-      // await page.click('.btn-group.app-tabs-list-item:not(.app-tabs-selected)')
-      // await sleep(2000)
-      // await page.click('.btn-group.app-tabs-list-item:not(.app-tabs-selected)')
-      // await sleep(2000)
-      // await page.click('.start-meetup')
-      // await sleep(5000)
-      // await page.waitForSelector('#leave-calling-pre-join')
-      // await page.click('#leave-calling-pre-join')
-      // page.screenshot({ path: '/recordings/debug2.png', })
+      // // await page.click('.btn-group.app-tabs-list-item:not(.app-tabs-selected)')
+      // // await sleep(2000)
+      // // await page.click('.btn-group.app-tabs-list-item:not(.app-tabs-selected)')
+      // // await sleep(2000)
+      // // await page.click('.start-meetup')
+      // // await sleep(5000)
+      // // await page.waitForSelector('#leave-calling-pre-join')
+      // // await page.click('#leave-calling-pre-join')
+      // // page.screenshot({ path: '/recordings/debug2.png', })
 
-      try {
-        await page.waitForSelector("button[type=button].icons-call-jump-in", {
-          timeout: 60_000,
-        });
-      } catch (e) {
-        console.warn("Failed to find join button, trying loading page again");
+      // try {
+      //   await page.waitForSelector("button[type=button].icons-call-jump-in", {
+      //     timeout: 60_000,
+      //   });
+      // } catch (e) {
+      //   console.warn("Failed to find join button, trying loading page again");
 
-        await page.goto("about:blank", { waitUntil: "domcontentloaded" });
-        await sleep(500);
-        await page.goto(url, { waitUntil: "domcontentloaded" });
+      //   await page.goto("about:blank", { waitUntil: "domcontentloaded" });
+      //   await sleep(500);
+      //   await page.goto(url, { waitUntil: "domcontentloaded" });
 
-        await page.waitForSelector("button[type=button].icons-call-jump-in", {
-          timeout: 60_000,
-        });
-      }
+      //   await page.waitForSelector("button[type=button].icons-call-jump-in", {
+      //     timeout: 60_000,
+      //   });
+      // }
     }
   }
 
@@ -163,39 +161,51 @@ export const startTeamsSession = async (url: string, session: Session) => {
     await page.click("button[type=button].icons-call-jump-in");
   } catch (_) {}
 
-  let frame = page.frames().find((e) => e.name().includes("experience"));
-  while (!frame) {
-    await sleep(1000);
-    frame = page.frames().find((e) => e.name().includes("experience"));
-  }
+  // let frame = page;
+  // // .frames().find((e) => e.name().includes("experience"));
+  // while (!frame) {
+  //   console.log('jestem tu3');
+  //   await sleep(1000); = page;
+  // // .frames().find((e) => e.name().includes("experience"));
+  // while (!frame) {
+  //   console.log('jestem tu3');
+  //   await sleep(1000);
+  //   frame = page.frames().find((e) => e.name().includes("experience"));
+  // }
+  //   frame = page.frames().find((e) => e.name().includes("experience"));
+  // }
 
-  await frame.waitForSelector("#prejoin-join-button", {
+  await page.type("input[type=text]", WEBEX_NAME!, {
+    delay: 20,
+  });
+
+  // const micButton = await page.waitForSelector("div[title=microphone]", {
+  //   timeout: 10_000,
+  // });
+  // const needsMute = await micButton.evaluate(
+  //   (element) => !element.getAttribute("aria-checked")?.includes("true")
+  // );
+  // session.assertActive();
+  // if (needsMute) await page.click("div[title=microphone]");
+
+await page.waitForSelector("#prejoin-join-button", {
     timeout: 30_000,
   });
   session.assertActive();
-  await frame.click("#prejoin-join-button");
+  await page.click("#prejoin-join-button");
 
   try {
-    await frame.waitForSelector("#prejoin-join-button", {
+    await page.waitForSelector("#prejoin-join-button", {
       timeout: 31_000,
       hidden: true,
     });
   } catch (e) {
-    await frame.click("#prejoin-join-button");
+    await page.click("#prejoin-join-button");
   }
-
-  const micButton = await frame.waitForSelector("#microphone-button", {
-    timeout: 60_000,
-  });
-  const needsMute = await micButton.evaluate(
-    (element) => !element.getAttribute("aria-label")?.includes("Unmute")
-  );
-  session.assertActive();
-  if (needsMute) await frame.click("#microphone-button");
 
   sleep(18_000)
     .then(() =>
-      frame.waitForSelector(
+      page.waitForSelector(
         '[data-tid="callingAlertDismissButton_DeviceCaptureMute"]',
         {
           timeout: 0,
@@ -211,7 +221,7 @@ export const startTeamsSession = async (url: string, session: Session) => {
 
   sleep(26_000)
     .then(() =>
-      frame.waitForSelector(
+      page.waitForSelector(
         '[data-tid="callingAlertDismissButton_JoinersOngoingRecording"]',
         {
           timeout: 0,
@@ -227,7 +237,7 @@ export const startTeamsSession = async (url: string, session: Session) => {
 
   sleep(15_000)
     .then(() =>
-      frame.waitForSelector(
+      page.waitForSelector(
         '[data-tid="callingAlertDismissButton_InitiatorStartedRecording"]',
         {
           timeout: 0,
@@ -243,7 +253,7 @@ export const startTeamsSession = async (url: string, session: Session) => {
 
   sleep(19_000)
     .then(() =>
-      frame.waitForSelector(
+      page.waitForSelector(
         '[data-tid="callingAlertDismissButton_NoAvailableMicrophone"]',
         {
           timeout: 0,
@@ -259,21 +269,16 @@ export const startTeamsSession = async (url: string, session: Session) => {
 };
 
 export const observeMeetingClosedState = (page: Page) => {
-  const frame = page.frames().find((e) => e.name().includes("experience"));
   let finished = false;
   let shouldBeClosed = false;
 
   sleep(1_000)
     .then(async () => {
-      (await frame.waitForSelector("#roster-button", { timeout: 0 })).click();
-      await sleep(100);
-
-      (await frame.waitForSelector("#roster-button", { timeout: 0 })).click();
-
-      await frame.waitForSelector("#roster-title-section-2", { timeout: 0 });
+      (await page.waitForSelector("#roster-button", { timeout: 0 })).click();
+      await sleep(20_000);
 
       const getParticipantsCount = () =>
-        frame.evaluate(() => {
+        page.evaluate(() => {
           const text =
             document
               .querySelector("#roster-title-section-2")
@@ -312,7 +317,6 @@ export const observeMeetingClosedState = (page: Page) => {
 
       if (
         (await page.$('form[name="retryForm"]')) ||
-        (await frame.$('form[name="retryForm"]')) ||
         originalUrl !== page.url()
       ) {
         finished = true;
