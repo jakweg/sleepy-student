@@ -77,7 +77,7 @@ const doCheck = async () => {
     console.log(entry);
 
     session.do(async () => {
-        spawn(["pulseaudio", "--start"]);
+        //spawn(["pulseaudio", "--start"]);
         if (entry.type === 'webex') {
             await startWebex(entry)
         } else if (entry.type === 'teams') {
