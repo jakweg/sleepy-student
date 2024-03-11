@@ -3,7 +3,7 @@ import { unlinkSync, writeFileSync } from "fs";
 import process from "process";
 import { initPlayer } from "./barka-player";
 import { launch as launchBrowser } from "./browser";
-import { HEIGHT, WIDTH } from "./config";
+import { HEIGHT, NOVNC_PORT, WIDTH } from "./config";
 import { launch as launchDiscord } from "./discord-stuff";
 import { spawn } from "./process";
 import { initScheduler } from "./scheduler";
@@ -58,8 +58,10 @@ try {
   });
 } catch (e) { }
 
-spawn(['x11vnc', '-display', ':1', '-bg', '-forever', '-nopw', '-quiet', '-listen', 'localhost', '-xkb']);
-spawn(['/usr/share/novnc/utils/novnc_proxy', '--listen', '9001'])
+if (NOVNC_PORT) {
+  spawn(['x11vnc', '-display', ':1', '-bg', '-forever', '-nopw', '-quiet', '-listen', 'localhost', '-xkb']);
+  spawn(['/usr/share/novnc/utils/novnc_proxy', '--listen', '9001'])
+}
 
 const load = () => Promise.all([launchBrowser(), launchDiscord()]);
 

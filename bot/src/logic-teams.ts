@@ -37,8 +37,6 @@ export const startTeamsSession = async (url: string, session: Session) => {
         })
         .catch(async () =>
         {
-          const html = await page.evaluate(() => document.body.innerHTML)
-          console.log({html})
           return Promise.any(
             page
               .frames()

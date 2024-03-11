@@ -6,6 +6,7 @@ import {
   ButtonInteraction,
   ButtonStyle,
   CacheType,
+  ChannelType,
   ChatInputCommandInteraction,
   Client,
   Interaction,
@@ -13,12 +14,15 @@ import {
   REST,
   Routes,
   SlashCommandBuilder,
+  SlashCommandChannelOption,
+  SlashCommandMentionableOption,
   SlashCommandStringOption,
   TextInputBuilder,
-  TextInputStyle
+  TextInputStyle,
+  cleanContent
 } from "discord.js";
 import { readFile } from "fs/promises";
-import { ALLOWED_CHANNELS, MAX_MEETING_DURATION_MINUTES } from "./config";
+import { ALLOWED_CHANNELS, MAX_MEETING_DURATION_MINUTES, OWNER_ID } from "./config";
 import { currentState, updateState } from "./current-state";
 import {
   deleteById,
@@ -526,6 +530,46 @@ const handleNextRecordingsRequest = async (
   }
 };
 
+const handleSayRequest = async (
+  interaction: ChatInputCommandInteraction<CacheType>
+) => {
+  try {
+    if (interaction.user.id !== OWNER_ID)
+      return await interaction.reply({
+        content: intl.COMMAND_SAY_REFUSED,
+        ephemeral: true,
+      })
+
+    const mention = interaction.options.getMentionable("mention", false);
+    const content = interaction.options.getString("content", true);
+    const channel = interaction.options.getChannel("channel", true);
+    const replyTo = interaction.options.getString("reply", false);
+
+    const realChannel = await interaction.client.channels.fetch(channel.id);
+
+    if (realChannel.isTextBased()) {
+      await realChannel.send({
+        content: `${mention ?? ''}${mention ? ' ' : ''}${content}`,
+        reply: replyTo ? {
+          messageReference: replyTo,
+          failIfNotExists: false,
+        } : undefined,
+      })
+
+      await interaction.reply({
+        content: "OK",
+        ephemeral: true,
+      });
+    } else throw new Error(`Expected text based channel`);
+
+  } catch (e) {
+    await interaction.reply({
+      content: ":( " + e.message,
+      ephemeral: true,
+    }).catch(() => void 0);
+  }
+};
+
 const handleDetailsRequest = async (
   interaction: ChatInputCommandInteraction<CacheType>
 ) => {
@@ -629,6 +673,9 @@ const handleInteraction = async (interaction: Interaction<CacheType>) => {
         break;
       case "upcoming":
         await handleNextRecordingsRequest(interaction);
+        break;
+      case "say":
+        await handleSayRequest(interaction);
         break;
     }
   } else if (interaction.isButton()) {
@@ -744,12 +791,48 @@ const createCommands = () => {
       .setDescriptionLocalizations({
         [intl.LOCALE]: intl.COMMAND_SS_DESCRIPTION,
       }),
+    new SlashCommandBuilder()
+      .setName("say")
+      .setDescription(en.COMMAND_SAY_DESCRIPTION)
+      .setNameLocalizations({
+        [intl.LOCALE]: intl.COMMAND_SAY_NAME,
+      })
+      .setDescriptionLocalizations({
+        [intl.LOCALE]: intl.COMMAND_SAY_DESCRIPTION,
+      })
+      .addChannelOption(
+        new SlashCommandChannelOption()
+          .setName("channel")
+          .setNameLocalizations({ [intl.LOCALE]: intl.COMMAND_SAY_CHANNEL })
+          .setDescription(en.COMMAND_SAY_CHANNEL_DESCRIPTION)
+          .setDescriptionLocalizations({ [intl.LOCALE]: intl.COMMAND_SAY_CHANNEL_DESCRIPTION })
+          .setRequired(true)
+          .addChannelTypes(ChannelType.GuildText))
+      .addStringOption(
+        new SlashCommandStringOption()
+          .setName("content")
+          .setNameLocalizations({ [intl.LOCALE]: intl.COMMAND_SAY_CONTENT })
+          .setDescription(en.COMMAND_SAY_CONTENT_DESCRIPTION)
+          .setDescriptionLocalizations({ [intl.LOCALE]: intl.COMMAND_SAY_CONTENT_DESCRIPTION })
+          .setRequired(true))
+      .addMentionableOption(
+        new SlashCommandMentionableOption()
+          .setName("mention")
+          .setNameLocalizations({ [intl.LOCALE]: intl.COMMAND_SAY_MENTION })
+          .setDescription(en.COMMAND_SAY_MENTION_DESCRIPTION)
+          .setDescriptionLocalizations({ [intl.LOCALE]: intl.COMMAND_SAY_MENTION_DESCRIPTION }))
+      .addStringOption(
+        new SlashCommandStringOption()
+          .setName("reply")
+          .setNameLocalizations({ [intl.LOCALE]: intl.COMMAND_SAY_REPLY })
+          .setDescription(en.COMMAND_SAY_REPLY_DESCRIPTION)
+          .setDescriptionLocalizations({ [intl.LOCALE]: intl.COMMAND_SAY_REPLY_DESCRIPTION }))
   ];
 };
 
 export const launch = async () => {
   const client = new Client({
-    intents: ["DirectMessages", "Guilds", "GuildMessages", "GuildVoiceStates"],
+    intents: ["DirectMessages", "Guilds", "GuildMessages", "GuildVoiceStates", ],
   });
 
   const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN!);
@@ -766,6 +849,17 @@ export const launch = async () => {
       console.error("Failed to response to interaction", e);
     }
   });
+
+  if (OWNER_ID)
+  client.on('messageCreate', async message => {
+    const mentionedMe = message.mentions.has(client.user.id, { ignoreEveryone: true })
+    if (!mentionedMe || message.author.bot) return;
+
+    const channel = await client.users.createDM(OWNER_ID)
+    await channel.send({
+      content: `<@${message.author.id}> on ${message.channel.toString()} said \`${cleanContent(message.content, channel)}\`\n${message.url}`,
+    });
+  })
 
   return client;
 };

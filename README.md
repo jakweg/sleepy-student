@@ -24,7 +24,9 @@ RECORDINGS_PATH=/where/to/store/recordings docker-compose up --build
 |      WEBEX_MAIL      |                        |                                          mail which to type when webex asks for it                                           |
 | MAX_MEETING_DURATION |          `90`          |                                duration after a recording will always be stopped, in minutes                                 |
 |   ALLOWED_CHANNELS   |                        |                       comma separated list of Discord channel ids which can be used to invoke commands                       |
+|       OWNER_ID       |                        |                 ID of owner user who can use `/say` command and gets notifications about mentions of the bot                 |
 |   BARKA_CHANNEL_ID   |                        |                              ID of voice channel which to join at 21:37 and play barka everyday                              |
+|      NOVNC_PORT      |                        |                                        Port for NoVNC proxy to run on (for debugging)                                        |
 |    RECORDING_URL     |                        |                           url to ready recording, `%name%` gets replaced with recording file name                            |
 |     TEAMS_EMAIL      |                        |                                                      email for MS Teams                                                      |
 |    TEAMS_PASSWORD    |                        |                                                 password to MS Teams account                                                 |

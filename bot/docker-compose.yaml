@@ -7,8 +7,11 @@ services:
     build: .
     restart: always
     ports:
-      - 9000:9000
-      - 9001:9001
+      # uncomment for debugging
+      # - 9000:9000                 # node.js
+      # - ${NOVNC_PORT:-9001}:9001  # novnc
+    environment:
+      - NOVNC_PORT=${NOVNC_PORT:-}
     volumes:
       - ${RECORDINGS_PATH:?Path on the disk where to store ready recordings}:/recordings:rw
       - persistent:/persistent:rw
