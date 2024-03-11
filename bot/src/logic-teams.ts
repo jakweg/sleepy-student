@@ -27,16 +27,19 @@ export const startTeamsSession = async (url: string, session: Session) => {
 
   let willLogin = true;
   try {
-    await page.waitForSelector("input[type=email]", { timeout: 20 * 1000 });
+    await page.waitForSelector("input[type=email]", { timeout: 10 * 1000 });
   } catch (e) {
     willLogin = false;
     try {
       const link = await page
-        .waitForSelector('a[aria-label="Select to sign-in"]', {
+        .waitForSelector('a[aria-label="Select to sign-in"],[data-tid="auth-sign-in-link"]', {
           timeout: 5 * 1000,
         })
-        .catch(() =>
-          Promise.any(
+        .catch(async () =>
+        {
+          const html = await page.evaluate(() => document.body.innerHTML)
+          console.log({html})
+          return Promise.any(
             page
               .frames()
               .map((frame) =>
@@ -45,6 +48,7 @@ export const startTeamsSession = async (url: string, session: Session) => {
                 )
               )
           )
+          }
         );
       await link.click();
       // const nickInput = await page.waitForSelector('input[name="username"]#username', { timeout: 5 * 1000 })
@@ -104,7 +108,7 @@ export const startTeamsSession = async (url: string, session: Session) => {
       await page.waitForSelector("input[type=submit]", { timeout: 20_000 });
       requireOriginForCredentials(page);
       await page.click("input[type=submit]");
-      await sleep(10_000);
+      await sleep(5_000);
     } catch (e) {
       await page.keyboard.press("Enter", { delay: 100 });
       await sleep(5_000);
@@ -112,8 +116,8 @@ export const startTeamsSession = async (url: string, session: Session) => {
     session.assertActive();
   }
 
-  await page.goto(url, { waitUntil: "domcontentloaded" });
-  await sleep(3_000);
+  await page.goto(url);
+  await sleep(15_000);
 
   session.assertActive();
   try {
@@ -177,7 +181,7 @@ export const startTeamsSession = async (url: string, session: Session) => {
 
   await page.type("input[type=text]", WEBEX_NAME!, {
     delay: 20,
-  });
+  }).catch(() => void 0);
 
   // const micButton = await page.waitForSelector("div[title=microphone]", {
   //   timeout: 10_000,
@@ -276,6 +280,7 @@ export const observeMeetingClosedState = (page: Page) => {
     .then(async () => {
       (await page.waitForSelector("#roster-button", { timeout: 0 })).click();
       await sleep(20_000);
+      (await page.waitForSelector("#roster-button", { timeout: 0 })).click();
 
       const getParticipantsCount = () =>
         page.evaluate(() => {

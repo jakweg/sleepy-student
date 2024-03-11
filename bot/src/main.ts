@@ -56,7 +56,10 @@ try {
     displayProcess.kill(15);
     unlinkSync("/tmp/.X1-lock");
   });
-} catch (e) {}
+} catch (e) { }
+
+spawn(['x11vnc', '-display', ':1', '-bg', '-forever', '-nopw', '-quiet', '-listen', 'localhost', '-xkb']);
+spawn(['/usr/share/novnc/utils/novnc_proxy', '--listen', '9001'])
 
 const load = () => Promise.all([launchBrowser(), launchDiscord()]);
 

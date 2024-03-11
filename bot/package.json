@@ -1,7 +1,7 @@
 {
   "scripts": {
-    "build": "esbuild --bundle --outdir=dist --external:puppeteer --external:@discordjs/voice --external:discord.js --external:dotenv --format=cjs --platform=node src/main.ts src/lang/*",
-    "start": "node dist/main.js"
+    "build": "esbuild --sourcemap=inline --bundle --outdir=dist --external:puppeteer --external:@discordjs/voice --external:discord.js --external:dotenv --format=cjs --platform=node src/main.ts src/lang/*",
+    "start": "node --inspect=0.0.0.0:9000 dist/main.js"
   },
   "dependencies": {
     "dotenv": "^16.3.1",
