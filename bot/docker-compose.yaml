@@ -6,8 +6,8 @@ services:
   bot:
     build: .
     restart: always
-    ports:
-      # uncomment for debugging
+    # uncomment ports for debugging:
+    # ports:
       # - 9000:9000                 # node.js
       # - ${NOVNC_PORT:-9001}:9001  # novnc
     environment:
