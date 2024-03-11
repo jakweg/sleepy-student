@@ -7,7 +7,7 @@ import { HEIGHT, WIDTH } from "./config";
 import { launch as launchDiscord } from "./discord-stuff";
 import { spawn } from "./process";
 import { initScheduler } from "./scheduler";
-import { sleep } from "./utils";
+import { sleep } from "./utils";``
 
 try {
   spawnSync("rm", ["/run/pulse", "-rf"], { stdio: "ignore" });
@@ -19,13 +19,29 @@ try {
 } catch (e) {
   void e;
 }
+// Dunno if its needed, but with this **** somehow works
+try {
+  spawnSync("rm", ["/var/run/pulse", "-rf"], { stdio: "ignore" });
+} catch (e) {
+  void e;
+}
+try {
+  spawnSync("rm", ["/var/lib/pulse", "-rf"], { stdio: "ignore" });
+} catch (e) {
+  void e;
+}
+try {
+  spawnSync("rm", ["/root/.config/pulse", "-rf"], { stdio: "ignore" });
+} catch (e) {
+  void e;
+}
 writeFileSync("/etc/pulse/daemon.conf", "use-pid-file=no");
 try {
   spawnSync("pulseaudio", ["-k"], { stdio: "ignore" });
 } catch (e) {
   void e;
 }
-spawn(["pulseaudio", "-D"]);
+spawn(["pulseaudio", "-D", "--exit-idle-time=-1"]);
 
 try {
   try {
