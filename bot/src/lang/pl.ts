@@ -182,3 +182,15 @@ export const COMMAND_DETAILS_ID_NAME = "spotkanie";
 export const COMMAND_DETAILS_ID_DESCRIPTION = "Które chcesz zobaczyć?";
 
 export const COMMAND_SS_DESCRIPTION = "Robi zrzut ekranu obecnej strony";
+
+export const COMMAND_SAY_NAME = "napisz"
+export const COMMAND_SAY_REFUSED = "Akurat ty to mnie tak nie możesz wykorzystywać!";
+export const COMMAND_SAY_DESCRIPTION = "Wysyła wiadomość";
+export const COMMAND_SAY_CHANNEL = "kanał";
+export const COMMAND_SAY_CONTENT = "wiadomość";
+export const COMMAND_SAY_MENTION = "tag";
+export const COMMAND_SAY_REPLY = "odpowiedź";
+export const COMMAND_SAY_CHANNEL_DESCRIPTION = "Kanał w którym wysłać wiadomość";
+export const COMMAND_SAY_CONTENT_DESCRIPTION = "Treść wiadomości";
+export const COMMAND_SAY_MENTION_DESCRIPTION = "Kogoś oznaczyć w niej?";
+export const COMMAND_SAY_REPLY_DESCRIPTION = "Wiadomość na którą odpisać";

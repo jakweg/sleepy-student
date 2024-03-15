@@ -175,3 +175,15 @@ export const COMMAND_DETAILS_ID_NAME = "meeting";
 export const COMMAND_DETAILS_ID_DESCRIPTION = "Which meeting to peek?";
 
 export const COMMAND_SS_DESCRIPTION = "Takes screenshot of current page";
+
+export const COMMAND_SAY_NAME = "say"
+export const COMMAND_SAY_REFUSED = "You can't use me that way!";
+export const COMMAND_SAY_DESCRIPTION = "Sends a message";
+export const COMMAND_SAY_CHANNEL = "channel";
+export const COMMAND_SAY_CONTENT = "content";
+export const COMMAND_SAY_MENTION = "mention";
+export const COMMAND_SAY_REPLY = "reply";
+export const COMMAND_SAY_CHANNEL_DESCRIPTION = "Channel you want a bot to send the message in";
+export const COMMAND_SAY_CONTENT_DESCRIPTION = "Content of the message";
+export const COMMAND_SAY_MENTION_DESCRIPTION = "Want to mention anyone?";
+export const COMMAND_SAY_REPLY_DESCRIPTION = "Message to reply";

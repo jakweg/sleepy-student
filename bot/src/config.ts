@@ -6,6 +6,8 @@ export const RECORDINGS_PATH = process.env.RECORDINGS_PATH || "/recordings";
 export const DB_PATH = process.env.DB_PATH || "/persistent/db.json";
 export const TIME_ZONE = process.env.TIME_ZONE || "GMT";
 export const LANGUAGE = process.env.LANGUAGE || "en-US";
+export const OWNER_ID = process.env.OWNER_ID
+export const NOVNC_PORT = parseInt(process.env.NOVNC_PORT)
 export const WIDTH = parseInt(process.env.WIDTH!, 10) || 1280;
 export const HEIGHT = parseInt(process.env.HEIGHT!, 10) || 720;
 export const FINAL_FILENAME_FORMAT =
@@ -49,12 +51,14 @@ console.log(`Using config:
     WEBEX_MAIL=${WEBEX_MAIL}
     BARKA_CHANNEL_ID=${BARKA_CHANNEL_ID}
     BARKA_DURATION=${BARKA_DURATION}
+    OWNER_ID=${OWNER_ID}
     MAX_MEETING_DURATION_MINUTES=${MAX_MEETING_DURATION_MINUTES}
     ALLOWED_CHANNELS=${ALLOWED_CHANNELS}
     RECORDING_READY_URL_FORMAT=${RECORDING_READY_URL_FORMAT}
     MS_TEAMS_EMAIL=${MS_TEAMS_CREDENTIALS_LOGIN}
     MS_TEAMS_PASSWORD=${MS_TEAMS_CREDENTIALS_PASSWORD ? "*preset*" : "*none*"}
     MS_TEAMS_ORIGINS=${MS_TEAMS_CREDENTIALS_ORIGINS}
+    NOVNC_PORT=${NOVNC_PORT || '<disabled>'}
 `);
 
 const doAccessTest = async () => {
